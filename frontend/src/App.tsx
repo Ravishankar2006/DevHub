@@ -7,6 +7,9 @@ import AppLayout from '@/components/layout/AppLayout'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
+import ProjectsPage from '@/pages/ProjectsPage'
+import ProjectDetailPage from '@/pages/ProjectDetailPage'
+import TasksPage from '@/pages/TasksPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 const queryClient = new QueryClient({
@@ -47,8 +50,9 @@ export default function App() {
                 <Route element={<AppLayout />}>
                   <Route index element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/projects"  element={<ComingSoon name="Projects" />} />
-                  <Route path="/tasks"     element={<ComingSoon name="Tasks" />} />
+                  <Route path="/projects"  element={<ProjectsPage />} />
+                  <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                  <Route path="/tasks"     element={<TasksPage />} />
                   <Route path="/goals"     element={<ComingSoon name="Goals & Habits" />} />
                   <Route path="/notes"     element={<ComingSoon name="Notes" />} />
                   <Route path="/learning"  element={<ComingSoon name="Learning Tracker" />} />
