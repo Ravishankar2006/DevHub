@@ -1,6 +1,8 @@
 package com.devhub.projects;
 
 import com.devhub.common.ApiException;
+import com.devhub.goals.Goal;
+import com.devhub.goals.GoalRepository;
 import com.devhub.projects.dto.ProjectDto;
 import com.devhub.projects.dto.ProjectMapper;
 import com.devhub.projects.dto.ProjectRequest;
@@ -23,6 +25,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final MilestoneRepository milestoneRepository;
     private final TaskRepository taskRepository;
+    private final GoalRepository goalRepository;
 
     @Transactional
     public ProjectDto createProject(User currentUser, ProjectRequest request) {
@@ -81,6 +84,11 @@ public class ProjectService {
         // the Flyway migration declares for Postgres.
         taskRepository.deleteByProjectId(projectId);
         milestoneRepository.deleteByProjectId(projectId);
+
+        List<Goal> linkedGoals = goalRepository.findByProjectId(projectId);
+        linkedGoals.forEach(goal -> goal.setProject(null));
+        goalRepository.saveAll(linkedGoals);
+
         projectRepository.delete(project);
     }
 

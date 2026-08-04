@@ -1,20 +1,23 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useProjects } from '@/hooks/useProjects'
 import { useTasks } from '@/hooks/useTasks'
+import { useGoals } from '@/hooks/useGoals'
 import { FolderKanban, CheckSquare, Target, BookOpen, Zap } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const { data: projects } = useProjects()
   const { data: tasks } = useTasks()
+  const { data: goals } = useGoals('ACTIVE')
 
   const activeProjects = projects?.filter(p => !p.archived).length
   const openTasks = tasks?.filter(t => t.status !== 'DONE').length
+  const activeGoals = goals?.length
 
   const quickStats = [
     { label: 'Active Projects', value: activeProjects ?? '—', icon: FolderKanban, color: 'text-brand-500' },
     { label: 'Open Tasks',      value: openTasks ?? '—',      icon: CheckSquare,  color: 'text-emerald-500' },
-    { label: 'Active Goals',    value: '—', icon: Target,       color: 'text-amber-500' },
+    { label: 'Active Goals',    value: activeGoals ?? '—', icon: Target,       color: 'text-amber-500' },
     { label: 'Learning Items',  value: '—', icon: BookOpen,     color: 'text-purple-500' },
   ]
 

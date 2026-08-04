@@ -89,3 +89,93 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   ON_HOLD: 'On Hold',
   COMPLETED: 'Completed',
 }
+
+export type GoalType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CAREER'
+export type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED'
+export type HabitFrequency = 'DAILY' | 'WEEKLY'
+
+export interface Goal {
+  id: string
+  title: string
+  description: string | null
+  type: GoalType
+  status: GoalStatus
+  targetDate: string | null
+  progressPercent: number
+  projectId: string | null
+  projectName: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GoalInput {
+  title: string
+  description?: string
+  type?: GoalType
+  status?: GoalStatus
+  targetDate?: string | null
+  progressPercent?: number
+  projectId?: string | null
+}
+
+export interface Habit {
+  id: string
+  goalId: string | null
+  goalTitle: string | null
+  title: string
+  frequency: HabitFrequency
+  currentStreak: number
+  longestStreak: number
+  checkedInToday: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface HabitInput {
+  title: string
+  goalId?: string | null
+  frequency?: HabitFrequency
+}
+
+export const GOAL_TYPE_LABELS: Record<GoalType, string> = {
+  DAILY: 'Daily',
+  WEEKLY: 'Weekly',
+  MONTHLY: 'Monthly',
+  CAREER: 'Career',
+}
+
+export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
+  ACTIVE: 'Active',
+  COMPLETED: 'Completed',
+  ABANDONED: 'Abandoned',
+}
+
+export interface NoteFolder {
+  id: string
+  name: string
+  noteCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NoteFolderInput {
+  name: string
+}
+
+export interface Note {
+  id: string
+  folderId: string | null
+  folderName: string | null
+  title: string
+  content: string | null
+  tags: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NoteInput {
+  title: string
+  content?: string
+  tags?: string[]
+  folderId?: string | null
+}
