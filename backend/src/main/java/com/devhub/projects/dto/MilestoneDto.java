@@ -16,6 +16,7 @@ import java.util.UUID;
 public class MilestoneDto {
     private UUID id;
     private UUID projectId;
+    private String projectName;
     private String title;
     private String description;
     private LocalDate dueDate;

@@ -49,6 +49,13 @@ public class MilestoneService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<MilestoneDto> listAllMilestones(User currentUser) {
+        return milestoneRepository.findByUserIdOrderByDueDateAsc(currentUser.getId()).stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public MilestoneDto updateMilestone(User currentUser, UUID projectId, UUID milestoneId, MilestoneRequest request) {
         Milestone milestone = getOwnedMilestone(currentUser, projectId, milestoneId);

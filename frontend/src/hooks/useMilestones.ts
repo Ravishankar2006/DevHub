@@ -13,6 +13,16 @@ export function useMilestones(projectId: string | undefined) {
   })
 }
 
+export function useAllMilestones() {
+  return useQuery({
+    queryKey: ['milestones', 'all'],
+    queryFn: async () => {
+      const res = await api.get<Milestone[]>('/milestones')
+      return res.data
+    },
+  })
+}
+
 export function useCreateMilestone(projectId: string) {
   const queryClient = useQueryClient()
   return useMutation({

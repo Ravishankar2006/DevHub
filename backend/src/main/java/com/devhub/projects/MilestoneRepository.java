@@ -9,5 +9,6 @@ import java.util.UUID;
 @Repository
 public interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
     List<Milestone> findByProjectIdOrderByDueDateAsc(UUID projectId);
+    List<Milestone> findByUserIdOrderByDueDateAsc(UUID userId);
     void deleteByProjectId(UUID projectId);
 }

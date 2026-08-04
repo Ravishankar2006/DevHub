@@ -2,7 +2,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useProjects } from '@/hooks/useProjects'
 import { useTasks } from '@/hooks/useTasks'
 import { useGoals } from '@/hooks/useGoals'
-import { FolderKanban, CheckSquare, Target, BookOpen, Zap } from 'lucide-react'
+import { FolderKanban, CheckSquare, Target, BookOpen } from 'lucide-react'
+import DueSoonTasksWidget from '@/components/dashboard/DueSoonTasksWidget'
+import UpcomingMilestonesWidget from '@/components/dashboard/UpcomingMilestonesWidget'
+import TodaysHabitsWidget from '@/components/dashboard/TodaysHabitsWidget'
+import RecentNotesWidget from '@/components/dashboard/RecentNotesWidget'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -45,22 +49,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Welcome card — shown until real data is available */}
-      <div className="card p-8 flex flex-col items-center text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mb-4">
-          <Zap size={22} className="text-brand-500" />
-        </div>
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-          Your workspace is ready
-        </h3>
-        <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
-          Start by creating a project, setting a goal, or adding your first note.
-          Your dashboard will populate as you build your data.
-        </p>
-        <div className="flex gap-3">
-          <a href="/projects" className="btn-primary text-sm">New Project</a>
-          <a href="/goals" className="btn-secondary text-sm">Set a Goal</a>
-        </div>
+      {/* Overview widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <DueSoonTasksWidget />
+        <UpcomingMilestonesWidget />
+        <TodaysHabitsWidget />
+        <RecentNotesWidget />
       </div>
     </div>
   )

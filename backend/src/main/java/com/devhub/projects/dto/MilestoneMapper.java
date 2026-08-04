@@ -12,6 +12,7 @@ public class MilestoneMapper {
         return MilestoneDto.builder()
                 .id(milestone.getId())
                 .projectId(milestone.getProject().getId())
+                .projectName(milestone.getProject().getName())
                 .title(milestone.getTitle())
                 .description(milestone.getDescription())
                 .dueDate(milestone.getDueDate())
