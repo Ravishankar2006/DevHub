@@ -2,27 +2,31 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useProjects } from '@/hooks/useProjects'
 import { useTasks } from '@/hooks/useTasks'
 import { useGoals } from '@/hooks/useGoals'
+import { useLearningResources } from '@/hooks/useLearning'
 import { FolderKanban, CheckSquare, Target, BookOpen } from 'lucide-react'
 import DueSoonTasksWidget from '@/components/dashboard/DueSoonTasksWidget'
 import UpcomingMilestonesWidget from '@/components/dashboard/UpcomingMilestonesWidget'
 import TodaysHabitsWidget from '@/components/dashboard/TodaysHabitsWidget'
 import RecentNotesWidget from '@/components/dashboard/RecentNotesWidget'
+import ContinueLearningWidget from '@/components/dashboard/ContinueLearningWidget'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const { data: projects } = useProjects()
   const { data: tasks } = useTasks()
   const { data: goals } = useGoals('ACTIVE')
+  const { data: learningResources } = useLearningResources()
 
   const activeProjects = projects?.filter(p => !p.archived).length
   const openTasks = tasks?.filter(t => t.status !== 'DONE').length
   const activeGoals = goals?.length
+  const learningItems = learningResources?.filter(r => r.status !== 'COMPLETED' && r.status !== 'ABANDONED').length
 
   const quickStats = [
     { label: 'Active Projects', value: activeProjects ?? '—', icon: FolderKanban, color: 'text-brand-500' },
     { label: 'Open Tasks',      value: openTasks ?? '—',      icon: CheckSquare,  color: 'text-emerald-500' },
     { label: 'Active Goals',    value: activeGoals ?? '—', icon: Target,       color: 'text-amber-500' },
-    { label: 'Learning Items',  value: '—', icon: BookOpen,     color: 'text-purple-500' },
+    { label: 'Learning Items',  value: learningItems ?? '—', icon: BookOpen,     color: 'text-purple-500' },
   ]
 
   const hour = new Date().getHours()
@@ -55,6 +59,7 @@ export default function DashboardPage() {
         <UpcomingMilestonesWidget />
         <TodaysHabitsWidget />
         <RecentNotesWidget />
+        <ContinueLearningWidget />
       </div>
     </div>
   )

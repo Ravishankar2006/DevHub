@@ -151,6 +151,52 @@ export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
   ABANDONED: 'Abandoned',
 }
 
+export type LearningResourceType = 'COURSE' | 'BOOK' | 'TUTORIAL' | 'CERTIFICATE' | 'VIDEO' | 'ARTICLE'
+export type LearningStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED'
+
+export interface LearningResource {
+  id: string
+  title: string
+  resourceType: LearningResourceType
+  provider: string | null
+  url: string | null
+  status: LearningStatus
+  progressPercent: number
+  estimatedCompletionDate: string | null
+  tags: string[]
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LearningResourceInput {
+  title: string
+  resourceType?: LearningResourceType
+  provider?: string | null
+  url?: string | null
+  status?: LearningStatus
+  progressPercent?: number
+  estimatedCompletionDate?: string | null
+  tags?: string[]
+  notes?: string | null
+}
+
+export const LEARNING_TYPE_LABELS: Record<LearningResourceType, string> = {
+  COURSE: 'Course',
+  BOOK: 'Book',
+  TUTORIAL: 'Tutorial',
+  CERTIFICATE: 'Certificate',
+  VIDEO: 'Video',
+  ARTICLE: 'Article',
+}
+
+export const LEARNING_STATUS_LABELS: Record<LearningStatus, string> = {
+  NOT_STARTED: 'Not Started',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  ABANDONED: 'Abandoned',
+}
+
 export interface NoteFolder {
   id: string
   name: string
