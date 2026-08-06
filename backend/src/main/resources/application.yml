@@ -17,6 +17,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: ${SERVER_PORT:8080}
@@ -41,3 +45,5 @@ devhub:
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRY_MS:604800000}
   security:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+  storage:
+    resumes-dir: ${RESUME_STORAGE_DIR:./uploads/resumes}

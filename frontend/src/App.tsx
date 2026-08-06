@@ -13,6 +13,7 @@ import TasksPage from '@/pages/TasksPage'
 import GoalsPage from '@/pages/GoalsPage'
 import NotesPage from '@/pages/NotesPage'
 import LearningPage from '@/pages/LearningPage'
+import ResumesPage from '@/pages/ResumesPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 const queryClient = new QueryClient({
@@ -59,7 +60,7 @@ export default function App() {
                   <Route path="/goals"     element={<GoalsPage />} />
                   <Route path="/notes"     element={<NotesPage />} />
                   <Route path="/learning"  element={<LearningPage />} />
-                  <Route path="/resumes"   element={<ComingSoon name="Resume Manager" />} />
+                  <Route path="/resumes"   element={<ResumesPage />} />
                   <Route path="/careers"   element={<ComingSoon name="Job Tracker" />} />
                   <Route path="/calendar"  element={<ComingSoon name="Calendar" />} />
                   <Route path="/search"    element={<ComingSoon name="Semantic Search" />} />

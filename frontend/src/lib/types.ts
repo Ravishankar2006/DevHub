@@ -197,6 +197,24 @@ export const LEARNING_STATUS_LABELS: Record<LearningStatus, string> = {
   ABANDONED: 'Abandoned',
 }
 
+export interface Resume {
+  id: string
+  name: string
+  label: string | null
+  fileName: string
+  fileSizeBytes: number
+  notes: string | null
+  downloadUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ResumeMetadataInput {
+  name: string
+  label?: string | null
+  notes?: string | null
+}
+
 export interface NoteFolder {
   id: string
   name: string

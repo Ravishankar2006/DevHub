@@ -16,6 +16,7 @@ frontend/.cache/
 
 # ─── Backend (Maven / Spring Boot) ───
 backend/target/
+backend/uploads/
 backend/.mvn/wrapper/maven-wrapper.jar
 *.class
 *.jar
