@@ -1,5 +1,7 @@
 package com.devhub.resumes;
 
+import com.devhub.careers.JobApplication;
+import com.devhub.careers.JobApplicationRepository;
 import com.devhub.common.ApiException;
 import com.devhub.resumes.dto.ResumeDto;
 import com.devhub.resumes.dto.ResumeMapper;
@@ -23,6 +25,7 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final ResumeFileStorageService storageService;
+    private final JobApplicationRepository jobApplicationRepository;
 
     @Transactional
     public ResumeDto createResume(User currentUser, MultipartFile file, String name, String label, String notes) {
@@ -72,6 +75,14 @@ public class ResumeService {
     @Transactional
     public void deleteResume(User currentUser, UUID resumeId) {
         Resume resume = getOwnedResume(currentUser, resumeId);
+
+        // Explicit unlink instead of relying on DB-level ON DELETE SET NULL, since the
+        // H2 dev schema (ddl-auto) doesn't carry the cascade clause the Flyway migration
+        // declares for Postgres (same reasoning as ProjectService.deleteProject).
+        List<JobApplication> linkedApplications = jobApplicationRepository.findByResumeId(resumeId);
+        linkedApplications.forEach(application -> application.setResume(null));
+        jobApplicationRepository.saveAll(linkedApplications);
+
         storageService.delete(resume.getStoragePath());
         resumeRepository.delete(resume);
     }

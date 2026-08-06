@@ -244,3 +244,71 @@ export interface NoteInput {
   tags?: string[]
   folderId?: string | null
 }
+
+export type JobApplicationStatus =
+  | 'WISHLIST'
+  | 'APPLIED'
+  | 'INTERVIEWING'
+  | 'OFFER'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'WITHDRAWN'
+
+export interface Company {
+  id: string
+  name: string
+  website: string | null
+  notes: string | null
+}
+
+export interface JobStatusHistoryEntry {
+  id: string
+  status: JobApplicationStatus
+  note: string | null
+  changedAt: string
+}
+
+export interface JobApplication {
+  id: string
+  roleTitle: string
+  status: JobApplicationStatus
+  appliedDate: string | null
+  deadline: string | null
+  location: string | null
+  jobPostingUrl: string | null
+  notes: string | null
+  company: Company
+  resumeId: string | null
+  resumeName: string | null
+  statusHistory: JobStatusHistoryEntry[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface JobApplicationInput {
+  companyName: string
+  companyWebsite?: string | null
+  roleTitle: string
+  status?: JobApplicationStatus
+  appliedDate?: string | null
+  deadline?: string | null
+  location?: string | null
+  jobPostingUrl?: string | null
+  notes?: string | null
+  resumeId?: string | null
+}
+
+export interface JobStatusChangeInput {
+  status: JobApplicationStatus
+  note?: string | null
+}
+
+export const JOB_STATUS_LABELS: Record<JobApplicationStatus, string> = {
+  WISHLIST: 'Wishlist',
+  APPLIED: 'Applied',
+  INTERVIEWING: 'Interviewing',
+  OFFER: 'Offer',
+  ACCEPTED: 'Accepted',
+  REJECTED: 'Rejected',
+  WITHDRAWN: 'Withdrawn',
+}
