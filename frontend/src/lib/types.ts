@@ -312,3 +312,37 @@ export const JOB_STATUS_LABELS: Record<JobApplicationStatus, string> = {
   REJECTED: 'Rejected',
   WITHDRAWN: 'Withdrawn',
 }
+
+export type CalendarEventCategory = 'INTERVIEW' | 'TASK' | 'STUDY_BLOCK' | 'DEADLINE' | 'MEETING' | 'OTHER'
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  description: string | null
+  category: CalendarEventCategory
+  startTime: string
+  endTime: string | null
+  allDay: boolean
+  location: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CalendarEventInput {
+  title: string
+  description?: string | null
+  category?: CalendarEventCategory
+  startTime: string
+  endTime?: string | null
+  allDay?: boolean
+  location?: string | null
+}
+
+export const CALENDAR_CATEGORY_LABELS: Record<CalendarEventCategory, string> = {
+  INTERVIEW: 'Interview',
+  TASK: 'Task',
+  STUDY_BLOCK: 'Study Block',
+  DEADLINE: 'Deadline',
+  MEETING: 'Meeting',
+  OTHER: 'Other',
+}
