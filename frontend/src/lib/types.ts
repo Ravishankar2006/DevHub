@@ -346,3 +346,23 @@ export const CALENDAR_CATEGORY_LABELS: Record<CalendarEventCategory, string> = {
   MEETING: 'Meeting',
   OTHER: 'Other',
 }
+
+export type AIMessageRole = 'USER' | 'ASSISTANT'
+
+export interface AIMessage {
+  id: string
+  role: AIMessageRole
+  content: string
+  createdAt: string
+}
+
+export interface AIConversationSummary {
+  id: string
+  title: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AIConversationDetail extends AIConversationSummary {
+  messages: AIMessage[]
+}

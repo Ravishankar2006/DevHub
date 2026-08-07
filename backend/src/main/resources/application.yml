@@ -49,3 +49,6 @@ devhub:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   storage:
     resumes-dir: ${RESUME_STORAGE_DIR:./uploads/resumes}
+  ai:
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-opus-5}
