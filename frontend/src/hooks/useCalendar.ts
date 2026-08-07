@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { CalendarEvent, CalendarEventInput } from '@/lib/types'
@@ -68,10 +69,15 @@ export function useDeleteCalendarEvent() {
 }
 
 export function useUpcomingCalendarEvents(limit: number) {
-  const now = new Date()
-  const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  // Computed once per mount instead of every render, since a fresh Date() on
+  // each render would change the query key and refetch in an infinite loop.
+  const range = useMemo(() => {
+    const now = new Date()
+    const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    return { from: now.toISOString(), to: horizon.toISOString() }
+  }, [])
 
-  const { data, isLoading } = useCalendarEvents({ from: now.toISOString(), to: horizon.toISOString() })
+  const { data, isLoading } = useCalendarEvents(range)
 
   return { data: data?.slice(0, limit), isLoading }
 }
