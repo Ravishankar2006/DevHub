@@ -5,6 +5,7 @@ import { useGoals } from '@/hooks/useGoals'
 import { useLearningResources } from '@/hooks/useLearning'
 import { FolderKanban, CheckSquare, Target, BookOpen } from 'lucide-react'
 import DailyBriefWidget from '@/components/dashboard/DailyBriefWidget'
+import RecommendationsWidget from '@/components/dashboard/RecommendationsWidget'
 import DueSoonTasksWidget from '@/components/dashboard/DueSoonTasksWidget'
 import UpcomingMilestonesWidget from '@/components/dashboard/UpcomingMilestonesWidget'
 import TodaysHabitsWidget from '@/components/dashboard/TodaysHabitsWidget'
@@ -60,6 +61,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <DailyBriefWidget />
         </div>
+        <RecommendationsWidget />
         <DueSoonTasksWidget />
         <UpcomingMilestonesWidget />
         <TodaysHabitsWidget />
