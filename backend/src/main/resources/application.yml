@@ -50,5 +50,5 @@ devhub:
   storage:
     resumes-dir: ${RESUME_STORAGE_DIR:./uploads/resumes}
   ai:
-    anthropic-api-key: ${ANTHROPIC_API_KEY:}
-    model: ${ANTHROPIC_MODEL:claude-opus-5}
+    gemini-api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-flash-latest}

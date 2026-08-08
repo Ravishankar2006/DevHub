@@ -24,7 +24,7 @@ public class AIConversationService {
 
     private final AIConversationRepository aiConversationRepository;
     private final AIMessageRepository aiMessageRepository;
-    private final ClaudeChatClient claudeChatClient;
+    private final GeminiChatClient geminiChatClient;
 
     @Transactional
     public AIConversationDetailDto createConversation(User currentUser) {
@@ -62,7 +62,7 @@ public class AIConversationService {
 
         List<AIMessage> history = messagesFor(conversationId);
 
-        String assistantReply = claudeChatClient.sendMessage(history);
+        String assistantReply = geminiChatClient.sendMessage(history);
 
         aiMessageRepository.save(
                 AIMessage.builder()
