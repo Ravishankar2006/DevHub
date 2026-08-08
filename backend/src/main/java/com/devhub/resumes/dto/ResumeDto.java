@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,6 +21,11 @@ public class ResumeDto {
     private long fileSizeBytes;
     private String notes;
     private String downloadUrl;
+    private Integer reviewScore;
+    private String reviewSummary;
+    private List<String> reviewIssues;
+    private List<String> reviewSuggestions;
+    private Instant reviewedAt;
     private Instant createdAt;
     private Instant updatedAt;
 }

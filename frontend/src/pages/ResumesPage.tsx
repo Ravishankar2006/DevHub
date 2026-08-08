@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { FileText, Plus, Search } from 'lucide-react'
 import ResumeCard from '@/components/resumes/ResumeCard'
 import ResumeFormModal from '@/components/resumes/ResumeFormModal'
-import { useDeleteResume, useResumes } from '@/hooks/useResumes'
+import ResumeReviewModal from '@/components/resumes/ResumeReviewModal'
+import { useDeleteResume, useResumes, useTriggerResumeReview } from '@/hooks/useResumes'
+import { useAiJob } from '@/hooks/useAiJobs'
 import type { Resume } from '@/lib/types'
 
 export default function ResumesPage() {
@@ -10,9 +13,28 @@ export default function ResumesPage() {
 
   const { data: resumes, isLoading } = useResumes({ label: labelFilter || undefined })
   const deleteResume = useDeleteResume()
+  const triggerReview = useTriggerResumeReview()
+  const queryClient = useQueryClient()
 
   const [showForm, setShowForm] = useState(false)
   const [editingResume, setEditingResume] = useState<Resume | undefined>(undefined)
+  const [viewingReview, setViewingReview] = useState<Resume | undefined>(undefined)
+  const [reviewingResumeId, setReviewingResumeId] = useState<string | null>(null)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+
+  const { data: activeJob } = useAiJob(activeJobId ?? undefined)
+
+  useEffect(() => {
+    if (!activeJob) return
+    if (activeJob.status === 'COMPLETED' || activeJob.status === 'FAILED') {
+      if (activeJob.status === 'FAILED') {
+        window.alert(`Review failed: ${activeJob.errorMessage ?? 'Unknown error'}`)
+      }
+      queryClient.invalidateQueries({ queryKey: ['resumes'] })
+      setReviewingResumeId(null)
+      setActiveJobId(null)
+    }
+  }, [activeJob, queryClient])
 
   const openCreate = () => { setEditingResume(undefined); setShowForm(true) }
   const openEdit = (resume: Resume) => { setEditingResume(resume); setShowForm(true) }
@@ -22,6 +44,12 @@ export default function ResumesPage() {
     if (window.confirm(`Delete "${resume.name}"?`)) {
       deleteResume.mutate(resume.id)
     }
+  }
+
+  const handleReview = async (resume: Resume) => {
+    setReviewingResumeId(resume.id)
+    const job = await triggerReview.mutateAsync(resume.id)
+    setActiveJobId(job.id)
   }
 
   return (
@@ -71,12 +99,16 @@ export default function ResumesPage() {
               resume={resume}
               onEdit={() => openEdit(resume)}
               onDelete={() => handleDelete(resume)}
+              onReview={() => handleReview(resume)}
+              onViewReview={() => setViewingReview(resume)}
+              isReviewing={reviewingResumeId === resume.id}
             />
           ))}
         </div>
       )}
 
       {showForm && <ResumeFormModal resume={editingResume} onClose={closeForm} />}
+      {viewingReview && <ResumeReviewModal resume={viewingReview} onClose={() => setViewingReview(undefined)} />}
     </div>
   )
 }

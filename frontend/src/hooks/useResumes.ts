@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { Resume, ResumeMetadataInput } from '@/lib/types'
+import type { AiJob, Resume, ResumeMetadataInput } from '@/lib/types'
 
 interface ResumeFilters {
   label?: string
@@ -76,6 +76,15 @@ export function useDeleteResume() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resumes'] })
+    },
+  })
+}
+
+export function useTriggerResumeReview() {
+  return useMutation({
+    mutationFn: async (resumeId: string) => {
+      const res = await api.post<AiJob>(`/resumes/${resumeId}/review`)
+      return res.data
     },
   })
 }

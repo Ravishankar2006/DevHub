@@ -205,6 +205,11 @@ export interface Resume {
   fileSizeBytes: number
   notes: string | null
   downloadUrl: string
+  reviewScore: number | null
+  reviewSummary: string | null
+  reviewIssues: string[]
+  reviewSuggestions: string[]
+  reviewedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -365,4 +370,15 @@ export interface AIConversationSummary {
 
 export interface AIConversationDetail extends AIConversationSummary {
   messages: AIMessage[]
+}
+
+export type AiJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+
+export interface AiJob {
+  id: string
+  jobType: string
+  status: AiJobStatus
+  errorMessage: string | null
+  createdAt: string
+  updatedAt: string
 }

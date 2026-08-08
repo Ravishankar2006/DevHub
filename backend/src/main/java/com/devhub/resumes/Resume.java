@@ -44,6 +44,21 @@ public class Resume {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "review_score")
+    private Integer reviewScore;
+
+    @Column(name = "review_summary", columnDefinition = "TEXT")
+    private String reviewSummary;
+
+    @Column(name = "review_issues", columnDefinition = "TEXT")
+    private String reviewIssues;
+
+    @Column(name = "review_suggestions", columnDefinition = "TEXT")
+    private String reviewSuggestions;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

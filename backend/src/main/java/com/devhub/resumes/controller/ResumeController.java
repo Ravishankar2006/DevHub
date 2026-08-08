@@ -1,7 +1,9 @@
 package com.devhub.resumes.controller;
 
+import com.devhub.jobs.dto.AiJobDto;
 import com.devhub.resumes.Resume;
 import com.devhub.resumes.ResumeFileStorageService;
+import com.devhub.resumes.ResumeReviewService;
 import com.devhub.resumes.ResumeService;
 import com.devhub.resumes.dto.ResumeDto;
 import com.devhub.resumes.dto.ResumeMetadataRequest;
@@ -28,6 +30,7 @@ public class ResumeController {
 
     private final ResumeService resumeService;
     private final ResumeFileStorageService storageService;
+    private final ResumeReviewService resumeReviewService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResumeDto> create(
@@ -68,6 +71,14 @@ public class ResumeController {
             @PathVariable UUID id) {
         resumeService.deleteResume(currentUser, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/review")
+    public ResponseEntity<AiJobDto> triggerReview(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable UUID id) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(resumeReviewService.triggerReview(currentUser, id));
     }
 
     @GetMapping("/{id}/download")
