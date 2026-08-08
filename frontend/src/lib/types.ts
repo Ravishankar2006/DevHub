@@ -382,3 +382,10 @@ export interface AiJob {
   createdAt: string
   updatedAt: string
 }
+
+export interface DailyBrief {
+  id: string
+  briefDate: string
+  content: string
+  generatedAt: string
+}

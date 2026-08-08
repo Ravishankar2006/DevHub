@@ -1,5 +1,6 @@
 package com.devhub.jobs;
 
+import com.devhub.brief.DailyBriefService;
 import com.devhub.resumes.ResumeReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ public class AiJobScheduler {
 
     private final AiJobRepository aiJobRepository;
     private final ResumeReviewService resumeReviewService;
+    private final DailyBriefService dailyBriefService;
 
     // Deliberately not @Transactional at this level: each repository save()
     // and each performReview() call already runs in its own transaction, so
@@ -33,6 +35,7 @@ public class AiJobScheduler {
             try {
                 switch (job.getJobType()) {
                     case RESUME_REVIEW -> resumeReviewService.performReview(job);
+                    case DAILY_BRIEF -> dailyBriefService.performGeneration(job);
                 }
                 job.setStatus(AiJobStatus.COMPLETED);
             } catch (Exception e) {

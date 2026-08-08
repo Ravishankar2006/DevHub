@@ -33,7 +33,18 @@ public class GeminiChatClient {
             - a list of specific issues (weak or vague bullet points, missing keywords, formatting \
             problems, missing sections),
             - a list of specific, actionable improvement suggestions.
-            Be concrete and reference actual content from the resume, not generic advice.""";
+            Be concrete and reference actual content from the resume, not generic advice. Write in \
+            plain text only -- no markdown, no asterisks, no bold/italic formatting.""";
+
+    private static final String DAILY_BRIEF_PROMPT = """
+            You are writing a short daily briefing for a solo developer inside DevHub. Given the \
+            structured summary of their tasks, goals, upcoming deadlines, learning items, and \
+            calendar events below, write a concise, motivating daily brief (3-5 sentences of plain \
+            prose -- do not use a bullet or numbered list). Prioritize what's most time-sensitive \
+            (today and tomorrow) first. Only reference items actually present in the data below -- \
+            never invent tasks, dates, or events. If there is very little going on, say so plainly \
+            and briefly. Write in plain text only -- no markdown, no asterisks, no bold/italic \
+            formatting, no headers.""";
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -62,6 +73,35 @@ public class GeminiChatClient {
         GeminiRequest request = new GeminiRequest(
                 contents,
                 new GeminiSystemInstruction(List.of(new GeminiPart(SYSTEM_PROMPT))));
+
+        try {
+            GeminiResponse response = restClient.post()
+                    .uri("/models/{model}:generateContent", model)
+                    .header("x-goog-api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(GeminiResponse.class);
+
+            if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
+                throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);
+            }
+
+            return response.candidates().get(0).content().parts().stream()
+                    .map(GeminiPart::text)
+                    .collect(Collectors.joining("\n"))
+                    .strip();
+        } catch (RestClientException e) {
+            throw new ApiException("AI assistant is temporarily unavailable, please try again shortly.", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    public String generateDailyBrief(String dataSummary) {
+        GeminiContent content = new GeminiContent("user", List.of(new GeminiPart(dataSummary)));
+
+        GeminiRequest request = new GeminiRequest(
+                List.of(content),
+                new GeminiSystemInstruction(List.of(new GeminiPart(DAILY_BRIEF_PROMPT))));
 
         try {
             GeminiResponse response = restClient.post()
