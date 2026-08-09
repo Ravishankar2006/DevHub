@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: devhub-backend
+  datasource:
+    url: jdbc:h2:mem:devhubtestdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  flyway:
+    enabled: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 0
+  servlet:
+    context-path: /api
+
+devhub:
+  jwt:
+    secret: "test-jwt-secret-key-for-devhub-testing-only-must-be-at-least-32-bytes-long"
+    access-expiration-ms: 900000
+    refresh-expiration-ms: 604800000
+  security:
+    allowed-origins: http://localhost:5173
+  storage:
+    resumes-dir: ./target/test-uploads/resumes
+    documents-dir: ./target/test-uploads/documents
+  ai:
+    gemini-api-key: test-key
+    model: gemini-flash-latest
+    embedding-model: gemini-embedding-001
+  frontend-url: http://localhost:5173
+  github:
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:8080/api/github/callback

@@ -67,7 +67,7 @@ public class SearchService {
         }
     }
 
-    private double cosineSimilarity(float[] a, float[] b) {
+    double cosineSimilarity(float[] a, float[] b) {
         if (a.length == 0 || b.length == 0 || a.length != b.length) return 0.0;
 
         double dot = 0, normA = 0, normB = 0;

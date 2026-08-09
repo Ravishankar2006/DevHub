@@ -30,12 +30,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        if (!"POST".equalsIgnoreCase(request.getMethod()) || !LIMITED_PATHS.contains(request.getServletPath())) {
+        String path = request.getRequestURI();
+        boolean limited = "POST".equalsIgnoreCase(request.getMethod())
+                && LIMITED_PATHS.stream().anyMatch(path::endsWith);
+
+        if (!limited) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String key = clientIp(request) + ":" + request.getServletPath();
+        String key = clientIp(request) + ":" + path;
         Window window = windows.computeIfAbsent(key, k -> new Window());
 
         if (window.isExceeded()) {

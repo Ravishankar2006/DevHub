@@ -1,8 +1,6 @@
 spring:
   application:
     name: devhub-backend
-  profiles:
-    active: dev
   datasource:
     url: ${NEON_DATABASE_URL}
     driver-class-name: org.postgresql.Driver
@@ -32,7 +30,7 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:${SERVER_PORT:8080}}
   servlet:
     context-path: /api
 

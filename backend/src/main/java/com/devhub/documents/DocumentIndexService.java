@@ -12,13 +12,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,6 +39,7 @@ public class DocumentIndexService {
     private final GeminiChatClient geminiChatClient;
     private final GeminiEmbeddingClient geminiEmbeddingClient;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     @Transactional
     public void performIndexing(AiJob job) {
@@ -68,11 +73,23 @@ public class DocumentIndexService {
             documentRepository.save(document);
             log.info("Document indexing completed for document {} ({} chunks)", document.getId(), chunks.size());
         } catch (Exception e) {
-            document.setStatus(DocumentStatus.FAILED);
-            document.setErrorMessage(e.getMessage());
-            documentRepository.save(document);
+            markFailed(document.getId(), e.getMessage());
             throw e instanceof RuntimeException re ? re : new ApiException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // Runs in its own transaction (via TransactionTemplate rather than @Transactional,
+    // since a same-class method call bypasses the Spring AOP proxy that annotation relies
+    // on) so this write survives even though performIndexing's own transaction is about to
+    // roll back once the exception above propagates out of it.
+    private void markFailed(UUID documentId, String errorMessage) {
+        TransactionTemplate requiresNew = new TransactionTemplate(transactionManager);
+        requiresNew.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        requiresNew.executeWithoutResult(status -> documentRepository.findById(documentId).ifPresent(doc -> {
+            doc.setStatus(DocumentStatus.FAILED);
+            doc.setErrorMessage(errorMessage);
+            documentRepository.save(doc);
+        }));
     }
 
     private String resolveText(Document document) {
@@ -102,7 +119,7 @@ public class DocumentIndexService {
         return null;
     }
 
-    private List<String> chunkText(String text) {
+    List<String> chunkText(String text) {
         List<String> chunks = new ArrayList<>();
         String normalized = text.strip();
         if (normalized.isEmpty()) return chunks;

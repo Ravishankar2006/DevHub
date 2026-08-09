@@ -3,6 +3,7 @@ package com.devhub.auth;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +28,7 @@ public class JwtTokenProvider {
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(secret);
-        } catch (IllegalArgumentException e) {
+        } catch (DecodingException | IllegalArgumentException e) {
             // Fall back to raw UTF-8 bytes if not valid Base64
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }

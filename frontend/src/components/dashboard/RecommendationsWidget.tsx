@@ -22,7 +22,7 @@ const toneBadgeClass: Record<Tone, string> = {
   gray: 'badge-gray',
 }
 
-function buildRecommendations(
+export function buildRecommendations(
   tasks: Task[],
   activeGoals: Goal[],
   resumes: Resume[],
