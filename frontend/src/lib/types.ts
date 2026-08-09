@@ -389,3 +389,26 @@ export interface DailyBrief {
   content: string
   generatedAt: string
 }
+
+export interface GitHubRepo {
+  id: string
+  name: string
+  fullName: string
+  description: string | null
+  language: string | null
+  stars: number
+  forks: number
+  htmlUrl: string
+  isPrivate: boolean
+  pushedAt: string | null
+}
+
+export interface GitHubAccount {
+  connected: boolean
+  username: string | null
+  avatarUrl: string | null
+  connectedAt: string | null
+  lastSyncedAt: string | null
+  repos: GitHubRepo[]
+  languageBreakdown: Record<string, number>
+}

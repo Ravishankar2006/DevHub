@@ -12,6 +12,7 @@ import TodaysHabitsWidget from '@/components/dashboard/TodaysHabitsWidget'
 import RecentNotesWidget from '@/components/dashboard/RecentNotesWidget'
 import ContinueLearningWidget from '@/components/dashboard/ContinueLearningWidget'
 import UpcomingCalendarEventsWidget from '@/components/dashboard/UpcomingCalendarEventsWidget'
+import GitHubActivityWidget from '@/components/dashboard/GitHubActivityWidget'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -68,6 +69,7 @@ export default function DashboardPage() {
         <RecentNotesWidget />
         <ContinueLearningWidget />
         <UpcomingCalendarEventsWidget />
+        <GitHubActivityWidget />
       </div>
     </div>
   )

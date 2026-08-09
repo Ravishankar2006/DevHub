@@ -17,6 +17,7 @@ import ResumesPage from '@/pages/ResumesPage'
 import CareersPage from '@/pages/CareersPage'
 import CalendarPage from '@/pages/CalendarPage'
 import AIChatPage from '@/pages/AIChatPage'
+import SettingsPage from '@/pages/SettingsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 const queryClient = new QueryClient({
@@ -68,7 +69,7 @@ export default function App() {
                   <Route path="/calendar"  element={<CalendarPage />} />
                   <Route path="/search"    element={<ComingSoon name="Semantic Search" />} />
                   <Route path="/ai/chat"   element={<AIChatPage />} />
-                  <Route path="/settings"  element={<ComingSoon name="Settings" />} />
+                  <Route path="/settings"  element={<SettingsPage />} />
                 </Route>
               </Route>
 
