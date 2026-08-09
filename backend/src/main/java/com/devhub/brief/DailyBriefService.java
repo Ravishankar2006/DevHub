@@ -26,6 +26,7 @@ import com.devhub.users.User;
 import com.devhub.users.UserRepository;
 import com.devhub.users.UserSettingsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DailyBriefService {
@@ -88,6 +90,7 @@ public class DailyBriefService {
         brief.setContent(content);
         brief.setGeneratedAt(Instant.now());
         dailyBriefRepository.save(brief);
+        log.info("Daily brief generated for user {}", userId);
     }
 
     private String buildDataSummary(UUID userId) {

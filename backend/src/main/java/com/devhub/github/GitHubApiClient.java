@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -18,6 +19,7 @@ public class GitHubApiClient {
 
     private final RestClient oauthClient;
     private final RestClient apiClient;
+    private final RetryTemplate retryTemplate;
     private final String clientId;
     private final String clientSecret;
     private final String redirectUri;
@@ -25,23 +27,25 @@ public class GitHubApiClient {
     public GitHubApiClient(
             @Value("${devhub.github.client-id}") String clientId,
             @Value("${devhub.github.client-secret}") String clientSecret,
-            @Value("${devhub.github.redirect-uri}") String redirectUri) {
+            @Value("${devhub.github.redirect-uri}") String redirectUri,
+            RetryTemplate externalCallRetryTemplate) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.redirectUri = redirectUri;
+        this.retryTemplate = externalCallRetryTemplate;
         this.oauthClient = RestClient.builder().baseUrl("https://github.com").build();
         this.apiClient = RestClient.builder().baseUrl("https://api.github.com").build();
     }
 
     public String exchangeCodeForToken(String code) {
         try {
-            TokenResponse response = oauthClient.post()
+            TokenResponse response = retryTemplate.execute(ctx -> oauthClient.post()
                     .uri("/login/oauth/access_token")
                     .header("Accept", MediaType.APPLICATION_JSON_VALUE)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(new TokenRequest(clientId, clientSecret, code, redirectUri))
                     .retrieve()
-                    .body(TokenResponse.class);
+                    .body(TokenResponse.class));
 
             if (response == null || response.accessToken() == null) {
                 throw new ApiException("GitHub did not return an access token.", HttpStatus.BAD_GATEWAY);
@@ -54,12 +58,12 @@ public class GitHubApiClient {
 
     public GitHubProfile fetchProfile(String accessToken) {
         try {
-            GitHubProfile profile = apiClient.get()
+            GitHubProfile profile = retryTemplate.execute(ctx -> apiClient.get()
                     .uri("/user")
                     .header("Authorization", "Bearer " + accessToken)
                     .header("Accept", "application/vnd.github+json")
                     .retrieve()
-                    .body(GitHubProfile.class);
+                    .body(GitHubProfile.class));
 
             if (profile == null) {
                 throw new ApiException("GitHub did not return a profile.", HttpStatus.BAD_GATEWAY);
@@ -72,12 +76,12 @@ public class GitHubApiClient {
 
     public List<GitHubRepoPayload> fetchRepos(String accessToken) {
         try {
-            List<GitHubRepoPayload> repos = apiClient.get()
+            List<GitHubRepoPayload> repos = retryTemplate.execute(ctx -> apiClient.get()
                     .uri("/user/repos?per_page=100&sort=pushed&affiliation=owner")
                     .header("Authorization", "Bearer " + accessToken)
                     .header("Accept", "application/vnd.github+json")
                     .retrieve()
-                    .body(new ParameterizedTypeReference<List<GitHubRepoPayload>>() {});
+                    .body(new ParameterizedTypeReference<List<GitHubRepoPayload>>() {}));
 
             return repos == null ? List.of() : repos;
         } catch (RestClientException e) {

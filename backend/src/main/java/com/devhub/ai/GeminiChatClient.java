@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -52,16 +53,19 @@ public class GeminiChatClient {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final RetryTemplate retryTemplate;
     private final String apiKey;
     private final String model;
 
     public GeminiChatClient(
             @Value("${devhub.ai.gemini-api-key}") String apiKey,
             @Value("${devhub.ai.model:gemini-flash-latest}") String model,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            RetryTemplate externalCallRetryTemplate) {
         this.apiKey = apiKey;
         this.model = model;
         this.objectMapper = objectMapper;
+        this.retryTemplate = externalCallRetryTemplate;
         this.restClient = RestClient.builder()
                 .baseUrl("https://generativelanguage.googleapis.com/v1beta")
                 .build();
@@ -79,13 +83,13 @@ public class GeminiChatClient {
                 new GeminiSystemInstruction(List.of(new GeminiPart(SYSTEM_PROMPT))));
 
         try {
-            GeminiResponse response = restClient.post()
+            GeminiResponse response = retryTemplate.execute(ctx -> restClient.post()
                     .uri("/models/{model}:generateContent", model)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .body(GeminiResponse.class);
+                    .body(GeminiResponse.class));
 
             if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
                 throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);
@@ -108,13 +112,13 @@ public class GeminiChatClient {
                 new GeminiSystemInstruction(List.of(new GeminiPart(DAILY_BRIEF_PROMPT))));
 
         try {
-            GeminiResponse response = restClient.post()
+            GeminiResponse response = retryTemplate.execute(ctx -> restClient.post()
                     .uri("/models/{model}:generateContent", model)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .body(GeminiResponse.class);
+                    .body(GeminiResponse.class));
 
             if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
                 throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);
@@ -148,13 +152,13 @@ public class GeminiChatClient {
                 new ReviewGenerationConfig("application/json", schema));
 
         try {
-            GeminiResponse response = restClient.post()
+            GeminiResponse response = retryTemplate.execute(ctx -> restClient.post()
                     .uri("/models/{model}:generateContent", model)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .body(GeminiResponse.class);
+                    .body(GeminiResponse.class));
 
             if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
                 throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);
@@ -181,13 +185,13 @@ public class GeminiChatClient {
         AnalysisRequest request = new AnalysisRequest(List.of(content), null);
 
         try {
-            GeminiResponse response = restClient.post()
+            GeminiResponse response = retryTemplate.execute(ctx -> restClient.post()
                     .uri("/models/{model}:generateContent", model)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .body(GeminiResponse.class);
+                    .body(GeminiResponse.class));
 
             if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
                 throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);

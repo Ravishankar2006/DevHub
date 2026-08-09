@@ -31,14 +31,14 @@ public class JwtTokenProvider {
             // Fall back to raw UTF-8 bytes if not valid Base64
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
-        
-        // Ensure key is long enough for HMAC-SHA256 (at least 256 bits / 32 bytes)
+
+        // Fail fast on a weak secret rather than silently padding it -- a misconfigured
+        // deployment should error loudly at startup, not run with a degraded key.
         if (keyBytes.length < 32) {
-            byte[] paddedKey = new byte[32];
-            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
-            keyBytes = paddedKey;
+            throw new IllegalStateException(
+                    "devhub.jwt.secret is too short: must decode to at least 32 bytes (256 bits) for HMAC-SHA256.");
         }
-        
+
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessExpirationMs = accessExpirationMs;
         this.refreshExpirationMs = refreshExpirationMs;

@@ -8,6 +8,7 @@ import com.devhub.notes.Note;
 import com.devhub.notes.NoteRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DocumentIndexService {
@@ -64,6 +66,7 @@ public class DocumentIndexService {
             document.setIndexedAt(Instant.now());
             document.setErrorMessage(null);
             documentRepository.save(document);
+            log.info("Document indexing completed for document {} ({} chunks)", document.getId(), chunks.size());
         } catch (Exception e) {
             document.setStatus(DocumentStatus.FAILED);
             document.setErrorMessage(e.getMessage());

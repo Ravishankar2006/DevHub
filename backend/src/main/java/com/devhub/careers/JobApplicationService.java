@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -66,7 +67,20 @@ public class JobApplicationService {
         } else {
             applications = jobApplicationRepository.findByUserIdOrderByUpdatedAtDesc(userId);
         }
-        return applications.stream().map(this::toDto).collect(Collectors.toList());
+
+        if (applications.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> applicationIds = applications.stream().map(JobApplication::getId).collect(Collectors.toList());
+        Map<UUID, List<JobStatusHistory>> historyByApplicationId = jobStatusHistoryRepository
+                .findByJobApplicationIdInOrderByChangedAtDesc(applicationIds).stream()
+                .collect(Collectors.groupingBy(h -> h.getJobApplication().getId()));
+
+        return applications.stream()
+                .map(application -> JobApplicationMapper.toDto(
+                        application, historyByApplicationId.getOrDefault(application.getId(), List.of())))
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

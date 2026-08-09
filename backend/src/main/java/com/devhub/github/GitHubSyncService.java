@@ -8,6 +8,7 @@ import com.devhub.jobs.dto.AiJobDto;
 import com.devhub.jobs.dto.AiJobMapper;
 import com.devhub.users.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GitHubSyncService {
@@ -62,5 +64,6 @@ public class GitHubSyncService {
 
         account.setLastSyncedAt(Instant.now());
         gitHubAccountRepository.save(account);
+        log.info("GitHub sync completed for account {} ({} repos)", account.getId(), repos.size());
     }
 }

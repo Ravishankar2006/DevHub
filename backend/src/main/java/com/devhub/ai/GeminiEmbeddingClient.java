@@ -4,6 +4,7 @@ import com.devhub.common.ApiException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -14,14 +15,17 @@ import java.util.List;
 public class GeminiEmbeddingClient {
 
     private final RestClient restClient;
+    private final RetryTemplate retryTemplate;
     private final String apiKey;
     private final String model;
 
     public GeminiEmbeddingClient(
             @Value("${devhub.ai.gemini-api-key}") String apiKey,
-            @Value("${devhub.ai.embedding-model:gemini-embedding-001}") String model) {
+            @Value("${devhub.ai.embedding-model:gemini-embedding-001}") String model,
+            RetryTemplate externalCallRetryTemplate) {
         this.apiKey = apiKey;
         this.model = model;
+        this.retryTemplate = externalCallRetryTemplate;
         this.restClient = RestClient.builder()
                 .baseUrl("https://generativelanguage.googleapis.com/v1beta")
                 .build();
@@ -31,13 +35,13 @@ public class GeminiEmbeddingClient {
         EmbedRequest request = new EmbedRequest(new EmbedContent(List.of(new EmbedPart(text))), taskType);
 
         try {
-            EmbedResponse response = restClient.post()
+            EmbedResponse response = retryTemplate.execute(ctx -> restClient.post()
                     .uri("/models/{model}:embedContent", model)
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
-                    .body(EmbedResponse.class);
+                    .body(EmbedResponse.class));
 
             if (response == null || response.embedding() == null || response.embedding().values() == null) {
                 throw new ApiException("Embedding service returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);

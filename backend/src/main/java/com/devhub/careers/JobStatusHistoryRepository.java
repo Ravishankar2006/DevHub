@@ -9,5 +9,6 @@ import java.util.UUID;
 @Repository
 public interface JobStatusHistoryRepository extends JpaRepository<JobStatusHistory, UUID> {
     List<JobStatusHistory> findByJobApplicationIdOrderByChangedAtDesc(UUID jobApplicationId);
+    List<JobStatusHistory> findByJobApplicationIdInOrderByChangedAtDesc(List<UUID> jobApplicationIds);
     void deleteByJobApplicationId(UUID jobApplicationId);
 }

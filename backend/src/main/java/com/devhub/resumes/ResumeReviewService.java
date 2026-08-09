@@ -10,6 +10,7 @@ import com.devhub.jobs.dto.AiJobMapper;
 import com.devhub.users.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumeReviewService {
@@ -64,5 +66,6 @@ public class ResumeReviewService {
         }
 
         resumeRepository.save(resume);
+        log.info("Resume review completed for resume {}", resume.getId());
     }
 }
