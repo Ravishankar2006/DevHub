@@ -412,3 +412,23 @@ export interface GitHubAccount {
   repos: GitHubRepo[]
   languageBreakdown: Record<string, number>
 }
+
+export type DocumentStatus = 'PENDING' | 'INDEXED' | 'FAILED'
+
+export interface DocumentItem {
+  id: string
+  title: string
+  fileName: string | null
+  status: DocumentStatus
+  indexedAt: string | null
+  errorMessage: string | null
+  createdAt: string
+}
+
+export interface SearchResult {
+  documentId: string
+  title: string
+  sourceType: 'NOTE' | 'UPLOAD'
+  snippet: string
+  score: number
+}

@@ -1,6 +1,7 @@
 package com.devhub.jobs;
 
 import com.devhub.brief.DailyBriefService;
+import com.devhub.documents.DocumentIndexService;
 import com.devhub.github.GitHubAccountRepository;
 import com.devhub.github.GitHubSyncService;
 import com.devhub.resumes.ResumeReviewService;
@@ -27,6 +28,7 @@ public class AiJobScheduler {
     private final GitHubSyncService gitHubSyncService;
     private final GitHubAccountRepository gitHubAccountRepository;
     private final UserRepository userRepository;
+    private final DocumentIndexService documentIndexService;
 
     // Deliberately not @Transactional at this level: each repository save()
     // and each performReview() call already runs in its own transaction, so
@@ -47,6 +49,7 @@ public class AiJobScheduler {
                     case RESUME_REVIEW -> resumeReviewService.performReview(job);
                     case DAILY_BRIEF -> dailyBriefService.performGeneration(job);
                     case GITHUB_SYNC -> gitHubSyncService.performSync(job);
+                    case DOCUMENT_INDEX -> documentIndexService.performIndexing(job);
                 }
                 job.setStatus(AiJobStatus.COMPLETED);
             } catch (Exception e) {

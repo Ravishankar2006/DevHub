@@ -49,9 +49,11 @@ devhub:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   storage:
     resumes-dir: ${RESUME_STORAGE_DIR:./uploads/resumes}
+    documents-dir: ${DOCUMENT_STORAGE_DIR:./uploads/documents}
   ai:
     gemini-api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-flash-latest}
+    embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   github:
     client-id: ${GITHUB_CLIENT_ID:}

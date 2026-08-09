@@ -36,6 +36,10 @@ public class GeminiChatClient {
             Be concrete and reference actual content from the resume, not generic advice. Write in \
             plain text only -- no markdown, no asterisks, no bold/italic formatting.""";
 
+    private static final String PDF_TEXT_EXTRACTION_PROMPT = """
+            Extract all readable text content from the attached PDF, in reading order. Return only \
+            the extracted text with no commentary, no markdown formatting, and no added headers.""";
+
     private static final String DAILY_BRIEF_PROMPT = """
             You are writing a short daily briefing for a solo developer inside DevHub. Given the \
             structured summary of their tasks, goals, upcoming deadlines, learning items, and \
@@ -166,6 +170,35 @@ public class GeminiChatClient {
             throw new ApiException("AI assistant is temporarily unavailable, please try again shortly.", HttpStatus.SERVICE_UNAVAILABLE);
         } catch (Exception e) {
             throw new ApiException("AI assistant returned an unreadable response.", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    public String extractPdfText(byte[] pdfBytes) {
+        AnalysisContent content = new AnalysisContent("user", List.of(
+                new AnalysisPart(PDF_TEXT_EXTRACTION_PROMPT, null),
+                new AnalysisPart(null, new InlineData("application/pdf", Base64.getEncoder().encodeToString(pdfBytes)))));
+
+        AnalysisRequest request = new AnalysisRequest(List.of(content), null);
+
+        try {
+            GeminiResponse response = restClient.post()
+                    .uri("/models/{model}:generateContent", model)
+                    .header("x-goog-api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(GeminiResponse.class);
+
+            if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
+                throw new ApiException("AI assistant returned an empty response.", HttpStatus.SERVICE_UNAVAILABLE);
+            }
+
+            return response.candidates().get(0).content().parts().stream()
+                    .map(GeminiPart::text)
+                    .collect(Collectors.joining("\n"))
+                    .strip();
+        } catch (RestClientException e) {
+            throw new ApiException("AI assistant is temporarily unavailable, please try again shortly.", HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

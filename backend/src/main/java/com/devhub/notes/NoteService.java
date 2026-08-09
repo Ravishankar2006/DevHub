@@ -1,6 +1,13 @@
 package com.devhub.notes;
 
 import com.devhub.common.ApiException;
+import com.devhub.documents.Document;
+import com.devhub.documents.DocumentChunkRepository;
+import com.devhub.documents.DocumentRepository;
+import com.devhub.documents.DocumentSourceType;
+import com.devhub.documents.DocumentStatus;
+import com.devhub.jobs.AiJobService;
+import com.devhub.jobs.AiJobType;
 import com.devhub.notes.dto.*;
 import com.devhub.users.User;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +26,9 @@ public class NoteService {
 
     private final NoteRepository noteRepository;
     private final NoteFolderRepository noteFolderRepository;
+    private final DocumentRepository documentRepository;
+    private final DocumentChunkRepository documentChunkRepository;
+    private final AiJobService aiJobService;
 
     @Transactional
     public NoteDto createNote(User currentUser, NoteRequest request) {
@@ -33,6 +43,7 @@ public class NoteService {
                 .build();
 
         note = noteRepository.save(note);
+        indexNote(currentUser, note);
         return NoteMapper.toDto(note);
     }
 
@@ -70,13 +81,40 @@ public class NoteService {
         note.setFolder(folder);
 
         note = noteRepository.save(note);
+        indexNote(currentUser, note);
         return NoteMapper.toDto(note);
     }
 
     @Transactional
     public void deleteNote(User currentUser, UUID noteId) {
         Note note = getOwnedNote(currentUser, noteId);
+
+        // Explicit child cleanup instead of relying on DB-level cascade, since the
+        // H2 dev schema (ddl-auto) doesn't carry the ON DELETE CASCADE clauses that
+        // the Flyway migration declares for Postgres (same reasoning as ProjectService.deleteProject).
+        documentRepository.findBySourceTypeAndSourceId(DocumentSourceType.NOTE, noteId)
+                .ifPresent(document -> {
+                    documentChunkRepository.deleteByDocumentId(document.getId());
+                    documentRepository.delete(document);
+                });
+
         noteRepository.delete(note);
+    }
+
+    private void indexNote(User currentUser, Note note) {
+        Document document = documentRepository.findBySourceTypeAndSourceId(DocumentSourceType.NOTE, note.getId())
+                .orElseGet(() -> Document.builder()
+                        .user(currentUser)
+                        .sourceType(DocumentSourceType.NOTE)
+                        .sourceId(note.getId())
+                        .build());
+
+        document.setTitle(note.getTitle());
+        document.setStatus(DocumentStatus.PENDING);
+        document.setErrorMessage(null);
+        document = documentRepository.save(document);
+
+        aiJobService.createJob(currentUser, AiJobType.DOCUMENT_INDEX, document.getId());
     }
 
     @Transactional
