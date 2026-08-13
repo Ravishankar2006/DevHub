@@ -22,5 +22,8 @@ public class GitHubRepoDto {
     private int forks;
     private String htmlUrl;
     private boolean isPrivate;
+    private boolean isFork;
+    private int openIssues;
+    private int watchers;
     private Instant pushedAt;
 }

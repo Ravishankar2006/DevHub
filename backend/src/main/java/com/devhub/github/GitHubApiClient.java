@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClientException;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class GitHubApiClient {
@@ -89,6 +90,46 @@ public class GitHubApiClient {
         }
     }
 
+    /** Best-effort: a single repo's languages failing to resolve shouldn't fail the whole sync. */
+    public Map<String, Integer> fetchLanguages(String accessToken, String fullName) {
+        try {
+            Map<String, Integer> languages = retryTemplate.execute(ctx -> apiClient.get()
+                    .uri("/repos/" + fullName + "/languages")
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Accept", "application/vnd.github+json")
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Integer>>() {}));
+            return languages == null ? Map.of() : languages;
+        } catch (RestClientException e) {
+            return Map.of();
+        }
+    }
+
+    /**
+     * Public + (since we're authenticated as the account owner) private events for the user,
+     * up to GitHub's own retention window (~90 days, ~300 events).
+     */
+    public List<GitHubEventPayload> fetchEvents(String accessToken, String username) {
+        try {
+            List<GitHubEventPayload> all = new java.util.ArrayList<>();
+            for (int page = 1; page <= 3; page++) {
+                String uri = "/users/" + username + "/events?per_page=100&page=" + page;
+                List<GitHubEventPayload> batch = retryTemplate.execute(ctx -> apiClient.get()
+                        .uri(uri)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Accept", "application/vnd.github+json")
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<List<GitHubEventPayload>>() {}));
+                if (batch == null || batch.isEmpty()) break;
+                all.addAll(batch);
+                if (batch.size() < 100) break;
+            }
+            return all;
+        } catch (RestClientException e) {
+            throw new ApiException("Could not reach GitHub to sync activity.", HttpStatus.BAD_GATEWAY);
+        }
+    }
+
     private record TokenRequest(
             @JsonProperty("client_id") String clientId,
             @JsonProperty("client_secret") String clientSecret,
@@ -112,5 +153,15 @@ public class GitHubApiClient {
             @JsonProperty("forks_count") Integer forksCount,
             @JsonProperty("html_url") String htmlUrl,
             @JsonProperty("private") Boolean isPrivate,
+            Boolean fork,
+            @JsonProperty("open_issues_count") Integer openIssuesCount,
+            @JsonProperty("watchers_count") Integer watchersCount,
             @JsonProperty("pushed_at") Instant pushedAt) {}
+
+    public record GitHubEventPayload(
+            String type,
+            @JsonProperty("created_at") Instant createdAt,
+            GitHubEventDetail payload) {}
+
+    public record GitHubEventDetail(@JsonProperty("distinct_size") Integer distinctSize) {}
 }

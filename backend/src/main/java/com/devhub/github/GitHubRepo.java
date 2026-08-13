@@ -55,6 +55,21 @@ public class GitHubRepo {
     @Builder.Default
     private boolean isPrivate = false;
 
+    @Column(name = "is_fork", nullable = false)
+    @Builder.Default
+    private boolean isFork = false;
+
+    @Column(name = "open_issues", nullable = false)
+    @Builder.Default
+    private int openIssues = 0;
+
+    @Column(name = "watchers", nullable = false)
+    @Builder.Default
+    private int watchers = 0;
+
+    @Column(name = "languages_json", columnDefinition = "TEXT")
+    private String languagesJson;
+
     @Column(name = "pushed_at")
     private Instant pushedAt;
 

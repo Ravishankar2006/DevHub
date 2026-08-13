@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { CheckCircle2, GitFork, Loader2, RefreshCw, XCircle } from 'lucide-react'
+import { CheckCircle2, Flame, GitFork, Loader2, RefreshCw, Star, XCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useGitHubAccount,
@@ -10,6 +10,15 @@ import {
 } from '@/hooks/useGitHub'
 import { useAiJob } from '@/hooks/useAiJobs'
 import { formatRelativeTime } from '@/lib/utils'
+
+function StatBlock({ icon, label, value }: { icon: ReactNode; label: string; value: string | number }) {
+  return (
+    <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-[var(--bg-tertiary)]">
+      <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">{icon} {label}</span>
+      <span className="text-sm font-semibold text-[var(--text-primary)]">{value}</span>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -106,6 +115,15 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+
+            {account.repos.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <StatBlock icon={<Flame size={13} className="text-amber-500" />} label="Current streak" value={`${account.currentStreak}d`} />
+                <StatBlock icon={<Flame size={13} className="text-[var(--text-muted)]" />} label="Longest streak" value={`${account.longestStreak}d`} />
+                <StatBlock icon={<Star size={13} className="text-amber-500" />} label="Total stars" value={account.totalStars} />
+                <StatBlock icon={<GitFork size={13} className="text-brand-500" />} label="Original repos" value={account.originalRepoCount} />
+              </div>
+            )}
 
             <div className="flex items-center gap-3">
               <button

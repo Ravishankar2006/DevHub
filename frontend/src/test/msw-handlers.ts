@@ -68,7 +68,11 @@ export const handlers = [
   http.post(`${BASE}/brief/generate`, () => HttpResponse.json({ id: 'job-1', jobType: 'DAILY_BRIEF', status: 'PENDING' }, { status: 202 })),
   http.get(`${BASE}/brief/today`, () => new HttpResponse(null, { status: 404 })),
 
-  http.get(`${BASE}/github/account`, () => HttpResponse.json({ connected: false, username: null, avatarUrl: null, connectedAt: null, lastSyncedAt: null, repos: [], languageBreakdown: {} })),
+  http.get(`${BASE}/github/account`, () => HttpResponse.json({
+    connected: false, username: null, avatarUrl: null, connectedAt: null, lastSyncedAt: null, repos: [],
+    languageBreakdown: {}, totalStars: 0, originalRepoCount: 0, forkedRepoCount: 0,
+    currentStreak: 0, longestStreak: 0, commitsLast30Days: 0, dailyActivity: {},
+  })),
   http.get(`${BASE}/github/authorize`, () => HttpResponse.json({ authorizeUrl: 'https://github.com/login/oauth/authorize' })),
   http.post(`${BASE}/github/sync`, () => HttpResponse.json({ id: 'job-1', jobType: 'GITHUB_SYNC', status: 'PENDING' }, { status: 202 })),
 ]

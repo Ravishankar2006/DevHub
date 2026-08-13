@@ -400,6 +400,9 @@ export interface GitHubRepo {
   forks: number
   htmlUrl: string
   isPrivate: boolean
+  isFork: boolean
+  openIssues: number
+  watchers: number
   pushedAt: string | null
 }
 
@@ -411,6 +414,13 @@ export interface GitHubAccount {
   lastSyncedAt: string | null
   repos: GitHubRepo[]
   languageBreakdown: Record<string, number>
+  totalStars: number
+  originalRepoCount: number
+  forkedRepoCount: number
+  currentStreak: number
+  longestStreak: number
+  commitsLast30Days: number
+  dailyActivity: Record<string, number>
 }
 
 export type DocumentStatus = 'PENDING' | 'INDEXED' | 'FAILED'

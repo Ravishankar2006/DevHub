@@ -45,6 +45,21 @@ public class GitHubAccount {
     @Column(name = "last_synced_at")
     private Instant lastSyncedAt;
 
+    @Column(name = "current_streak", nullable = false)
+    @Builder.Default
+    private int currentStreak = 0;
+
+    @Column(name = "longest_streak", nullable = false)
+    @Builder.Default
+    private int longestStreak = 0;
+
+    @Column(name = "commits_last_30_days", nullable = false)
+    @Builder.Default
+    private int commitsLast30Days = 0;
+
+    @Column(name = "daily_activity_json", columnDefinition = "TEXT")
+    private String dailyActivityJson;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

@@ -21,4 +21,11 @@ public class GitHubAccountDto {
     private Instant lastSyncedAt;
     private List<GitHubRepoDto> repos;
     private Map<String, Long> languageBreakdown;
+    private int totalStars;
+    private int originalRepoCount;
+    private int forkedRepoCount;
+    private int currentStreak;
+    private int longestStreak;
+    private int commitsLast30Days;
+    private Map<String, Integer> dailyActivity;
 }
