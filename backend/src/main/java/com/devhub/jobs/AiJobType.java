@@ -4,5 +4,6 @@ public enum AiJobType {
     RESUME_REVIEW,
     DAILY_BRIEF,
     GITHUB_SYNC,
-    DOCUMENT_INDEX
+    DOCUMENT_INDEX,
+    LEETCODE_SYNC
 }

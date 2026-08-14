@@ -3,6 +3,7 @@ package com.devhub.support;
 import com.devhub.ai.GeminiChatClient;
 import com.devhub.ai.GeminiEmbeddingClient;
 import com.devhub.github.GitHubApiClient;
+import com.devhub.leetcode.LeetCodeApiClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -37,6 +38,9 @@ public abstract class BaseIntegrationTest {
 
     @MockBean
     protected GitHubApiClient gitHubApiClient;
+
+    @MockBean
+    protected LeetCodeApiClient leetCodeApiClient;
 
     // Every test that registers a user gets its own X-Forwarded-For so the shared
     // RateLimitFilter state (one bean instance per cached Spring context) never causes

@@ -4,6 +4,8 @@ import com.devhub.brief.DailyBriefService;
 import com.devhub.documents.DocumentIndexService;
 import com.devhub.github.GitHubAccountRepository;
 import com.devhub.github.GitHubSyncService;
+import com.devhub.leetcode.LeetCodeAccountRepository;
+import com.devhub.leetcode.LeetCodeService;
 import com.devhub.resumes.ResumeReviewService;
 import com.devhub.users.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class AiJobScheduler {
 
     private static final long GITHUB_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+    private static final long LEETCODE_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
     private final AiJobRepository aiJobRepository;
     private final AiJobService aiJobService;
@@ -27,6 +30,8 @@ public class AiJobScheduler {
     private final DailyBriefService dailyBriefService;
     private final GitHubSyncService gitHubSyncService;
     private final GitHubAccountRepository gitHubAccountRepository;
+    private final LeetCodeService leetCodeService;
+    private final LeetCodeAccountRepository leetCodeAccountRepository;
     private final UserRepository userRepository;
     private final DocumentIndexService documentIndexService;
 
@@ -50,6 +55,7 @@ public class AiJobScheduler {
                     case DAILY_BRIEF -> dailyBriefService.performGeneration(job);
                     case GITHUB_SYNC -> gitHubSyncService.performSync(job);
                     case DOCUMENT_INDEX -> documentIndexService.performIndexing(job);
+                    case LEETCODE_SYNC -> leetCodeService.performSync(job);
                 }
                 job.setStatus(AiJobStatus.COMPLETED);
             } catch (Exception e) {
@@ -69,6 +75,15 @@ public class AiJobScheduler {
         for (UUID userId : userIds) {
             userRepository.findById(userId)
                     .ifPresent(user -> aiJobService.createJob(user, AiJobType.GITHUB_SYNC, userId));
+        }
+    }
+
+    @Scheduled(fixedDelay = LEETCODE_SYNC_INTERVAL_MS)
+    public void scheduleLeetCodeSyncs() {
+        List<UUID> userIds = leetCodeAccountRepository.findAllUserIds();
+        for (UUID userId : userIds) {
+            userRepository.findById(userId)
+                    .ifPresent(user -> aiJobService.createJob(user, AiJobType.LEETCODE_SYNC, userId));
         }
     }
 }

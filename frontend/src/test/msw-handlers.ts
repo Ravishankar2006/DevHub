@@ -75,4 +75,16 @@ export const handlers = [
   })),
   http.get(`${BASE}/github/authorize`, () => HttpResponse.json({ authorizeUrl: 'https://github.com/login/oauth/authorize' })),
   http.post(`${BASE}/github/sync`, () => HttpResponse.json({ id: 'job-1', jobType: 'GITHUB_SYNC', status: 'PENDING' }, { status: 202 })),
+
+  http.get(`${BASE}/leetcode/account`, () => HttpResponse.json({
+    connected: false, username: null, ranking: null, totalSolved: 0, easySolved: 0, mediumSolved: 0,
+    hardSolved: 0, totalActiveDays: 0, currentStreak: 0, longestStreak: 0, dailyActivity: {},
+    connectedAt: null, lastSyncedAt: null,
+  })),
+  http.post(`${BASE}/leetcode/connect`, () => HttpResponse.json({
+    connected: true, username: 'testcoder', ranking: 12345, totalSolved: 50, easySolved: 30, mediumSolved: 18,
+    hardSolved: 2, totalActiveDays: 10, currentStreak: 3, longestStreak: 5, dailyActivity: {},
+    connectedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(),
+  })),
+  http.post(`${BASE}/leetcode/sync`, () => HttpResponse.json({ id: 'job-1', jobType: 'LEETCODE_SYNC', status: 'PENDING' }, { status: 202 })),
 ]

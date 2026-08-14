@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Flame, GitFork, Loader2, RefreshCw, Star, XCircle } from 'lucide-react'
+import { CheckCircle2, Code2, Flame, GitFork, Loader2, RefreshCw, Star, Trophy, XCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useGitHubAccount,
@@ -8,6 +8,12 @@ import {
   useDisconnectGitHub,
   useTriggerGitHubSync,
 } from '@/hooks/useGitHub'
+import {
+  useLeetCodeAccount,
+  useConnectLeetCode,
+  useDisconnectLeetCode,
+  useTriggerLeetCodeSync,
+} from '@/hooks/useLeetCode'
 import { useAiJob } from '@/hooks/useAiJobs'
 import { formatRelativeTime } from '@/lib/utils'
 
@@ -30,8 +36,17 @@ export default function SettingsPage() {
   const triggerSync = useTriggerGitHubSync()
   const queryClient = useQueryClient()
 
+  const { data: leetCodeAccount, isLoading: isLeetCodeLoading } = useLeetCodeAccount()
+  const connectLeetCode = useConnectLeetCode()
+  const disconnectLeetCode = useDisconnectLeetCode()
+  const triggerLeetCodeSync = useTriggerLeetCodeSync()
+  const [leetCodeUsername, setLeetCodeUsername] = useState('')
+
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const { data: activeJob } = useAiJob(activeJobId ?? undefined)
+
+  const [activeLeetCodeJobId, setActiveLeetCodeJobId] = useState<string | null>(null)
+  const { data: activeLeetCodeJob } = useAiJob(activeLeetCodeJobId ?? undefined)
 
   useEffect(() => {
     if (!activeJob) return
@@ -40,6 +55,14 @@ export default function SettingsPage() {
       setActiveJobId(null)
     }
   }, [activeJob, queryClient])
+
+  useEffect(() => {
+    if (!activeLeetCodeJob) return
+    if (activeLeetCodeJob.status === 'COMPLETED' || activeLeetCodeJob.status === 'FAILED') {
+      queryClient.invalidateQueries({ queryKey: ['leetcode'] })
+      setActiveLeetCodeJobId(null)
+    }
+  }, [activeLeetCodeJob, queryClient])
 
   const dismissBanner = () => {
     searchParams.delete('github')
@@ -58,6 +81,25 @@ export default function SettingsPage() {
   }
 
   const isSyncing = activeJobId !== null
+
+  const handleLeetCodeConnect = async () => {
+    if (!leetCodeUsername.trim()) return
+    await connectLeetCode.mutateAsync(leetCodeUsername.trim())
+    setLeetCodeUsername('')
+  }
+
+  const handleLeetCodeSync = async () => {
+    const job = await triggerLeetCodeSync.mutateAsync()
+    setActiveLeetCodeJobId(job.id)
+  }
+
+  const handleLeetCodeDisconnect = () => {
+    if (window.confirm('Disconnect your LeetCode account? Synced stats will be removed.')) {
+      disconnectLeetCode.mutate()
+    }
+  }
+
+  const isLeetCodeSyncing = activeLeetCodeJobId !== null
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
@@ -137,6 +179,82 @@ export default function SettingsPage() {
               <button
                 onClick={handleDisconnect}
                 disabled={disconnectGitHub.isPending}
+                className="text-xs text-red-600 dark:text-red-400 hover:underline"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="card p-5 flex flex-col gap-3 mt-5">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+          <Code2 size={15} className="text-brand-500" /> LeetCode
+        </h3>
+
+        {isLeetCodeLoading && <p className="text-xs text-[var(--text-muted)]">Loading...</p>}
+
+        {!isLeetCodeLoading && leetCodeAccount && !leetCodeAccount.connected && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-[var(--text-secondary)]">
+              Connect your LeetCode account to track your problem-solving stats and streak.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={leetCodeUsername}
+                onChange={e => setLeetCodeUsername(e.target.value)}
+                placeholder="LeetCode username"
+                className="input text-sm flex-1"
+              />
+              <button
+                onClick={handleLeetCodeConnect}
+                disabled={connectLeetCode.isPending || !leetCodeUsername.trim()}
+                className="btn-primary text-sm"
+              >
+                <Code2 size={14} /> Connect
+              </button>
+            </div>
+            {connectLeetCode.isError && (
+              <p className="text-xs text-red-600 dark:text-red-400">
+                Could not find that LeetCode username. Please check it and try again.
+              </p>
+            )}
+          </div>
+        )}
+
+        {!isLeetCodeLoading && leetCodeAccount && leetCodeAccount.connected && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">{leetCodeAccount.username}</p>
+              <p className="text-xs text-[var(--text-muted)]">
+                {leetCodeAccount.totalSolved} solved
+                {leetCodeAccount.lastSyncedAt && ` · last synced ${formatRelativeTime(leetCodeAccount.lastSyncedAt)}`}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <StatBlock icon={<Flame size={13} className="text-amber-500" />} label="Current streak" value={`${leetCodeAccount.currentStreak}d`} />
+              <StatBlock icon={<Flame size={13} className="text-[var(--text-muted)]" />} label="Longest streak" value={`${leetCodeAccount.longestStreak}d`} />
+              <StatBlock icon={<Star size={13} className="text-amber-500" />} label="Total solved" value={leetCodeAccount.totalSolved} />
+              {leetCodeAccount.ranking != null && (
+                <StatBlock icon={<Trophy size={13} className="text-brand-500" />} label="Ranking" value={leetCodeAccount.ranking.toLocaleString()} />
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleLeetCodeSync}
+                disabled={isLeetCodeSyncing}
+                className="btn-secondary text-sm"
+              >
+                {isLeetCodeSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {isLeetCodeSyncing ? 'Syncing...' : 'Sync now'}
+              </button>
+              <button
+                onClick={handleLeetCodeDisconnect}
+                disabled={disconnectLeetCode.isPending}
                 className="text-xs text-red-600 dark:text-red-400 hover:underline"
               >
                 Disconnect

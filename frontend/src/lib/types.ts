@@ -423,6 +423,22 @@ export interface GitHubAccount {
   dailyActivity: Record<string, number>
 }
 
+export interface LeetCodeAccount {
+  connected: boolean
+  username: string | null
+  ranking: number | null
+  totalSolved: number
+  easySolved: number
+  mediumSolved: number
+  hardSolved: number
+  totalActiveDays: number
+  currentStreak: number
+  longestStreak: number
+  dailyActivity: Record<string, number>
+  connectedAt: string | null
+  lastSyncedAt: string | null
+}
+
 export type DocumentStatus = 'PENDING' | 'INDEXED' | 'FAILED'
 
 export interface DocumentItem {

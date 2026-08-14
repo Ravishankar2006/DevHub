@@ -1,6 +1,7 @@
 package com.devhub.github;
 
 import com.devhub.common.ApiException;
+import com.devhub.common.StreakCalculator;
 import com.devhub.jobs.AiJob;
 import com.devhub.jobs.AiJobService;
 import com.devhub.jobs.AiJobType;
@@ -120,44 +121,10 @@ public class GitHubSyncService {
                 .filter(e -> !e.getKey().isBefore(historyCutoff))
                 .collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue, (a, b) -> a, TreeMap::new));
 
-        account.setCurrentStreak((int) computeCurrentStreak(buckets));
-        account.setLongestStreak((int) computeLongestStreak(buckets));
+        account.setCurrentStreak((int) StreakCalculator.computeCurrentStreak(buckets));
+        account.setLongestStreak((int) StreakCalculator.computeLongestStreak(buckets));
         account.setCommitsLast30Days(commitsLast30Days);
         account.setDailyActivityJson(writeJson(recentActivity));
-    }
-
-    private long computeCurrentStreak(Set<Long> buckets) {
-        long today = LocalDate.now().toEpochDay();
-        long cursor;
-        if (buckets.contains(today)) {
-            cursor = today;
-        } else if (buckets.contains(today - 1)) {
-            cursor = today - 1;
-        } else {
-            return 0;
-        }
-
-        long streak = 0;
-        while (buckets.contains(cursor)) {
-            streak++;
-            cursor--;
-        }
-        return streak;
-    }
-
-    private long computeLongestStreak(Set<Long> buckets) {
-        long longest = 0;
-        for (Long bucket : buckets) {
-            if (buckets.contains(bucket - 1)) continue; // not the start of a run
-            long run = 1;
-            long cursor = bucket + 1;
-            while (buckets.contains(cursor)) {
-                run++;
-                cursor++;
-            }
-            longest = Math.max(longest, run);
-        }
-        return longest;
     }
 
     private String writeJson(Object value) {
