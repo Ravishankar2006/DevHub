@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { AiJob, LeetCodeAccount } from '@/lib/types'
+import type { LeetCodeAccount } from '@/lib/types'
 
 export function useLeetCodeAccount() {
   return useQuery({
@@ -41,11 +41,11 @@ export function useTriggerLeetCodeSync() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const res = await api.post<AiJob>('/leetcode/sync')
+      const res = await api.post<LeetCodeAccount>('/leetcode/sync')
       return res.data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leetcode'] })
+    onSuccess: data => {
+      queryClient.setQueryData(['leetcode', 'account'], data)
     },
   })
 }

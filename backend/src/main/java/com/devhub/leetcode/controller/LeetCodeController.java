@@ -1,11 +1,9 @@
 package com.devhub.leetcode.controller;
 
-import com.devhub.jobs.dto.AiJobDto;
 import com.devhub.leetcode.LeetCodeService;
 import com.devhub.leetcode.dto.LeetCodeAccountDto;
 import com.devhub.users.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +30,8 @@ public class LeetCodeController {
     }
 
     @PostMapping("/sync")
-    public ResponseEntity<AiJobDto> sync(@AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(leetCodeService.triggerManualSync(currentUser));
+    public ResponseEntity<LeetCodeAccountDto> sync(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(leetCodeService.syncNow(currentUser));
     }
 
     @DeleteMapping("/account")

@@ -3,10 +3,6 @@ package com.devhub.leetcode;
 import com.devhub.common.ApiException;
 import com.devhub.common.StreakCalculator;
 import com.devhub.jobs.AiJob;
-import com.devhub.jobs.AiJobService;
-import com.devhub.jobs.AiJobType;
-import com.devhub.jobs.dto.AiJobDto;
-import com.devhub.jobs.dto.AiJobMapper;
 import com.devhub.leetcode.dto.LeetCodeAccountDto;
 import com.devhub.leetcode.dto.LeetCodeMapper;
 import com.devhub.users.User;
@@ -37,7 +33,6 @@ public class LeetCodeService {
 
     private final LeetCodeAccountRepository leetCodeAccountRepository;
     private final LeetCodeApiClient leetCodeApiClient;
-    private final AiJobService aiJobService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -65,21 +60,31 @@ public class LeetCodeService {
         return LeetCodeMapper.toDto(account);
     }
 
+    // Unlike GitHub sync (many repos + per-repo language calls, genuinely slow), a LeetCode
+    // sync is a single fast GraphQL round trip -- so the manual "Sync now" action runs
+    // synchronously instead of going through the AiJob queue. Routing it through the queue
+    // added up to ~7s of latency (AiJobScheduler's 5s poll + the frontend's 2s poll) for
+    // what should be an instant refresh.
     @Transactional
-    public AiJobDto triggerManualSync(User currentUser) {
-        leetCodeAccountRepository.findByUserId(currentUser.getId())
+    public LeetCodeAccountDto syncNow(User currentUser) {
+        LeetCodeAccount account = leetCodeAccountRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ApiException("Connect your LeetCode account first.", HttpStatus.BAD_REQUEST));
 
-        AiJob job = aiJobService.createJob(currentUser, AiJobType.LEETCODE_SYNC, currentUser.getId());
-        return AiJobMapper.toDto(job);
+        syncAccount(account);
+        return LeetCodeMapper.toDto(account);
     }
 
+    // Still used by the periodic background resync (scheduleLeetCodeSyncs), where async is fine.
     @Transactional
     public void performSync(AiJob job) {
         UUID userId = job.getTargetId();
         LeetCodeAccount account = leetCodeAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException("LeetCode account is no longer connected.", HttpStatus.NOT_FOUND));
 
+        syncAccount(account);
+    }
+
+    private void syncAccount(LeetCodeAccount account) {
         LeetCodeApiClient.MatchedUser profile = leetCodeApiClient.fetchProfile(account.getLeetcodeUsername());
         if (profile == null) {
             throw new ApiException(

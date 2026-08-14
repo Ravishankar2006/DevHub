@@ -102,9 +102,12 @@ public class GitHubSyncService {
 
         Map<LocalDate, Integer> dailyCommits = new TreeMap<>();
         for (GitHubApiClient.GitHubEventPayload event : events) {
-            if (!"PushEvent".equals(event.type()) || event.createdAt() == null || event.payload() == null) continue;
-            Integer commits = event.payload().distinctSize();
-            if (commits == null || commits <= 0) continue;
+            if (!"PushEvent".equals(event.type()) || event.createdAt() == null) continue;
+            // GitHub's events payload no longer includes distinct_size (it used to), so a push
+            // with an unknown commit count still counts as at least one commit for that day --
+            // otherwise every push gets silently dropped and streaks/activity read as all-zero.
+            Integer distinctSize = event.payload() != null ? event.payload().distinctSize() : null;
+            int commits = (distinctSize != null && distinctSize > 0) ? distinctSize : 1;
             LocalDate day = event.createdAt().atZone(ZoneId.systemDefault()).toLocalDate();
             dailyCommits.merge(day, commits, Integer::sum);
         }

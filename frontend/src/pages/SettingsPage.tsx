@@ -45,9 +45,6 @@ export default function SettingsPage() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const { data: activeJob } = useAiJob(activeJobId ?? undefined)
 
-  const [activeLeetCodeJobId, setActiveLeetCodeJobId] = useState<string | null>(null)
-  const { data: activeLeetCodeJob } = useAiJob(activeLeetCodeJobId ?? undefined)
-
   useEffect(() => {
     if (!activeJob) return
     if (activeJob.status === 'COMPLETED' || activeJob.status === 'FAILED') {
@@ -55,14 +52,6 @@ export default function SettingsPage() {
       setActiveJobId(null)
     }
   }, [activeJob, queryClient])
-
-  useEffect(() => {
-    if (!activeLeetCodeJob) return
-    if (activeLeetCodeJob.status === 'COMPLETED' || activeLeetCodeJob.status === 'FAILED') {
-      queryClient.invalidateQueries({ queryKey: ['leetcode'] })
-      setActiveLeetCodeJobId(null)
-    }
-  }, [activeLeetCodeJob, queryClient])
 
   const dismissBanner = () => {
     searchParams.delete('github')
@@ -88,9 +77,8 @@ export default function SettingsPage() {
     setLeetCodeUsername('')
   }
 
-  const handleLeetCodeSync = async () => {
-    const job = await triggerLeetCodeSync.mutateAsync()
-    setActiveLeetCodeJobId(job.id)
+  const handleLeetCodeSync = () => {
+    triggerLeetCodeSync.mutate()
   }
 
   const handleLeetCodeDisconnect = () => {
@@ -99,7 +87,7 @@ export default function SettingsPage() {
     }
   }
 
-  const isLeetCodeSyncing = activeLeetCodeJobId !== null
+  const isLeetCodeSyncing = triggerLeetCodeSync.isPending
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
@@ -260,6 +248,11 @@ export default function SettingsPage() {
                 Disconnect
               </button>
             </div>
+            {triggerLeetCodeSync.isError && (
+              <p className="text-xs text-red-600 dark:text-red-400">
+                Could not sync with LeetCode right now. Please try again.
+              </p>
+            )}
           </div>
         )}
       </div>

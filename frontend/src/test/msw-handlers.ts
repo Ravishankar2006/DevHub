@@ -86,5 +86,9 @@ export const handlers = [
     hardSolved: 2, totalActiveDays: 10, currentStreak: 3, longestStreak: 5, dailyActivity: {},
     connectedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(),
   })),
-  http.post(`${BASE}/leetcode/sync`, () => HttpResponse.json({ id: 'job-1', jobType: 'LEETCODE_SYNC', status: 'PENDING' }, { status: 202 })),
+  http.post(`${BASE}/leetcode/sync`, () => HttpResponse.json({
+    connected: true, username: 'testcoder', ranking: 12345, totalSolved: 50, easySolved: 30, mediumSolved: 18,
+    hardSolved: 2, totalActiveDays: 10, currentStreak: 3, longestStreak: 5, dailyActivity: {},
+    connectedAt: new Date().toISOString(), lastSyncedAt: new Date().toISOString(),
+  })),
 ]
