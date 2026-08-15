@@ -8,6 +8,9 @@ import com.devhub.calendar.CalendarEventRepository;
 import com.devhub.careers.JobApplication;
 import com.devhub.careers.JobApplicationRepository;
 import com.devhub.common.ApiException;
+import com.devhub.github.GitHubAccountRepository;
+import com.devhub.github.GitHubRepo;
+import com.devhub.github.GitHubRepoRepository;
 import com.devhub.goals.Goal;
 import com.devhub.goals.GoalRepository;
 import com.devhub.goals.GoalStatus;
@@ -19,6 +22,7 @@ import com.devhub.jobs.dto.AiJobMapper;
 import com.devhub.learning.LearningResource;
 import com.devhub.learning.LearningResourceRepository;
 import com.devhub.learning.LearningStatus;
+import com.devhub.leetcode.LeetCodeAccountRepository;
 import com.devhub.tasks.Task;
 import com.devhub.tasks.TaskRepository;
 import com.devhub.tasks.TaskStatus;
@@ -34,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,6 +59,9 @@ public class DailyBriefService {
     private final JobApplicationRepository jobApplicationRepository;
     private final LearningResourceRepository learningResourceRepository;
     private final CalendarEventRepository calendarEventRepository;
+    private final GitHubAccountRepository gitHubAccountRepository;
+    private final GitHubRepoRepository gitHubRepoRepository;
+    private final LeetCodeAccountRepository leetCodeAccountRepository;
 
     @Transactional
     public AiJobDto triggerGeneration(User currentUser) {
@@ -133,8 +141,30 @@ public class DailyBriefService {
                 .map(e -> e.getTitle() + " (" + e.getStartTime() + ")")
                 .toList());
 
+        gitHubAccountRepository.findByUserId(userId).ifPresent(account -> {
+            List<GitHubRepo> repos = gitHubRepoRepository.findByGithubAccountIdOrderByPushedAtDesc(account.getId());
+            int totalStars = repos.stream().mapToInt(GitHubRepo::getStars).sum();
+            long originalCount = repos.stream().filter(r -> !r.isFork()).count();
+            long forkedCount = repos.size() - originalCount;
+            appendSection(sb, "GitHub activity", List.of(
+                    "Current streak: " + account.getCurrentStreak() + " day(s), longest streak: " + account.getLongestStreak() + " day(s)",
+                    "Commits in last 30 days: " + account.getCommitsLast30Days(),
+                    repos.size() + " repositories (" + originalCount + " original, " + forkedCount + " forked), " + totalStars + " total stars"));
+        });
+
+        leetCodeAccountRepository.findByUserId(userId).ifPresent(account -> {
+            List<String> lines = new ArrayList<>(List.of(
+                    "Current streak: " + account.getCurrentStreak() + " day(s), longest streak: " + account.getLongestStreak() + " day(s)",
+                    "Total solved: " + account.getTotalSolved() + " (" + account.getEasySolved() + " easy, "
+                            + account.getMediumSolved() + " medium, " + account.getHardSolved() + " hard)"));
+            if (account.getRanking() != null) {
+                lines.add("Ranking: " + account.getRanking());
+            }
+            appendSection(sb, "LeetCode activity", lines);
+        });
+
         if (sb.isEmpty()) {
-            return "The user has no tasks, goals, deadlines, learning items, or calendar events in the next 7 days.";
+            return "The user has no tasks, goals, deadlines, learning items, calendar events, or connected coding activity in the next 7 days.";
         }
         return sb.toString();
     }

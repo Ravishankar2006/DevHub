@@ -43,8 +43,9 @@ public class GeminiChatClient {
 
     private static final String DAILY_BRIEF_PROMPT = """
             You are writing a short daily briefing for a solo developer inside DevHub. Given the \
-            structured summary of their tasks, goals, upcoming deadlines, learning items, and \
-            calendar events below, write a concise, motivating daily brief (3-5 sentences of plain \
+            structured summary of their tasks, goals, upcoming deadlines, learning items, \
+            calendar events, and GitHub/LeetCode coding activity below, write a concise, motivating \
+            daily brief (3-5 sentences of plain \
             prose -- do not use a bullet or numbered list). Prioritize what's most time-sensitive \
             (today and tomorrow) first. Only reference items actually present in the data below -- \
             never invent tasks, dates, or events. If there is very little going on, say so plainly \
