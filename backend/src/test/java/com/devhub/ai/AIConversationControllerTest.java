@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,7 +33,7 @@ class AIConversationControllerTest extends BaseIntegrationTest {
 
     @Test
     void sendMessageAppendsUserAndAssistantMessages() throws Exception {
-        when(geminiChatClient.sendMessage(anyList())).thenReturn("Mocked assistant reply");
+        when(geminiChatClient.sendAgentMessage(anyList(), any())).thenReturn("Mocked assistant reply");
 
         String token = registerAndLogin(uniqueEmail("ai-message"));
         String id = createConversation(token);

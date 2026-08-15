@@ -25,6 +25,7 @@ public class AIConversationService {
     private final AIConversationRepository aiConversationRepository;
     private final AIMessageRepository aiMessageRepository;
     private final GeminiChatClient geminiChatClient;
+    private final AgentToolExecutor agentToolExecutor;
 
     @Transactional
     public AIConversationDetailDto createConversation(User currentUser) {
@@ -62,7 +63,8 @@ public class AIConversationService {
 
         List<AIMessage> history = messagesFor(conversationId);
 
-        String assistantReply = geminiChatClient.sendMessage(history);
+        String assistantReply = geminiChatClient.sendAgentMessage(history,
+                (toolName, args) -> agentToolExecutor.execute(currentUser, toolName, args));
 
         aiMessageRepository.save(
                 AIMessage.builder()
