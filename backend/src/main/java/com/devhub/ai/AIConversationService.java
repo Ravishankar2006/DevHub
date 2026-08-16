@@ -25,7 +25,7 @@ public class AIConversationService {
     private final AIConversationRepository aiConversationRepository;
     private final AIMessageRepository aiMessageRepository;
     private final GeminiChatClient geminiChatClient;
-    private final AgentToolExecutor agentToolExecutor;
+    private final AIProposedActionService aiProposedActionService;
 
     @Transactional
     public AIConversationDetailDto createConversation(User currentUser) {
@@ -33,7 +33,7 @@ public class AIConversationService {
                 AIConversation.builder()
                         .user(currentUser)
                         .build());
-        return AIMapper.toDetailDto(conversation, List.of());
+        return AIMapper.toDetailDto(conversation, List.of(), List.of());
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +46,8 @@ public class AIConversationService {
     @Transactional(readOnly = true)
     public AIConversationDetailDto getConversation(User currentUser, UUID conversationId) {
         AIConversation conversation = getOwnedConversation(currentUser, conversationId);
-        return AIMapper.toDetailDto(conversation, messagesFor(conversationId));
+        return AIMapper.toDetailDto(conversation, messagesFor(conversationId),
+                aiProposedActionService.listPending(currentUser, conversationId));
     }
 
     @Transactional
@@ -63,8 +64,9 @@ public class AIConversationService {
 
         List<AIMessage> history = messagesFor(conversationId);
 
+        AIConversation conversationRef = conversation;
         String assistantReply = geminiChatClient.sendAgentMessage(history,
-                (toolName, args) -> agentToolExecutor.execute(currentUser, toolName, args));
+                (toolName, args) -> aiProposedActionService.propose(currentUser, conversationRef, toolName, args));
 
         aiMessageRepository.save(
                 AIMessage.builder()
@@ -79,7 +81,8 @@ public class AIConversationService {
         }
         conversation = aiConversationRepository.save(conversation);
 
-        return AIMapper.toDetailDto(conversation, messagesFor(conversationId));
+        return AIMapper.toDetailDto(conversation, messagesFor(conversationId),
+                aiProposedActionService.listPending(currentUser, conversationId));
     }
 
     @Transactional

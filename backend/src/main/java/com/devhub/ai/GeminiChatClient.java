@@ -29,18 +29,28 @@ public class GeminiChatClient {
             with you in this conversation, never invent details about their projects, resume, or job \
             applications. If you need information you don't have, ask for it.
 
-            You can also act on the user's behalf using the tools provided: creating tasks, habits, \
-            notes, calendar events, goals, and projects. When the user asks you to create or schedule \
-            something, actually call the matching tool -- never just describe what you would do or \
-            claim something was created without calling the tool. If required information is missing \
+            You can also act on the user's behalf using the tools provided: creating, updating, and \
+            deleting tasks, habits, notes, calendar events, goals, and projects. Calling a tool does \
+            NOT perform the action immediately -- it prepares a proposal that is shown to the user as \
+            a card they must confirm before anything actually changes. When the user asks you to \
+            create, change, or remove something, call the matching tool so a proposal is prepared -- \
+            never claim something was done, changed, or deleted without calling a tool, and never tell \
+            the user an action is final. After a tool call succeeds, tell the user in plain language \
+            what you've prepared and that it's waiting for their confirmation, using the actual \
+            summary the tool returned -- never invent details. If a tool call fails (for example \
+            because the referenced task or note could not be found, or because more than one thing \
+            matches the name given), explain what went wrong in plain language and, if several items \
+            matched, ask the user to specify which one they mean. Update and delete tools identify \
+            their target by its current title or name, so always use the exact title or name the user \
+            gave (or the one you see earlier in this conversation) -- never guess a new title in place \
+            of the identifying one. Deleting something cannot be undone once confirmed, so make sure \
+            you have the right item before calling a delete tool. If required information is missing \
             or genuinely ambiguous (for example no title given, or an unclear date), ask a clarifying \
-            question in plain text instead of guessing or calling a tool with made-up values. After a \
-            tool call completes, summarize in plain language exactly what was created, using the \
-            actual result data -- never invent details the tool result didn't confirm. If a tool call \
-            fails, tell the user what went wrong. Resolve relative dates and times (\"tomorrow\", \
-            \"next Friday\", \"in two hours\") against the current date/time given below, and express \
-            dates back to the user in plain language, not raw ISO timestamps. Write in plain text only \
-            -- no markdown, no asterisks, no bold/italic formatting.
+            question in plain text instead of guessing or calling a tool with made-up values. Resolve \
+            relative dates and times (\"tomorrow\", \"next Friday\", \"in two hours\") against the \
+            current date/time given below, and express dates back to the user in plain language, not \
+            raw ISO timestamps. Write in plain text only -- no markdown, no asterisks, no bold/italic \
+            formatting.
 
             Current date/time (UTC): %s""";
 
@@ -271,12 +281,45 @@ public class GeminiChatClient {
                                 "dueDate", new ParamProperty("STRING", "Due date in ISO-8601 format YYYY-MM-DD, only if mentioned.", null, null)),
                                 List.of("title"))),
                 new FunctionDeclaration(
+                        "update_task",
+                        "Update an existing task, identified by its current title. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the task to update, exactly as it appears.", null, null),
+                                "newTitle", new ParamProperty("STRING", "New title, only if renaming.", null, null),
+                                "description", new ParamProperty("STRING", "New description, only if changing.", null, null),
+                                "projectName", new ParamProperty("STRING", "New project to link, only if changing.", null, null),
+                                "status", new ParamProperty("STRING", "New status, only if changing.", List.of("TODO", "IN_PROGRESS", "DONE"), null),
+                                "priority", new ParamProperty("STRING", "New priority, only if changing.", List.of("LOW", "MEDIUM", "HIGH"), null),
+                                "dueDate", new ParamProperty("STRING", "New due date YYYY-MM-DD, only if changing.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "delete_task",
+                        "Delete an existing task, identified by its current title. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the task to delete, exactly as it appears.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
                         "create_habit",
                         "Create a new recurring habit for the user, optionally linked to an existing goal.",
                         new ParamSchema("OBJECT", Map.of(
                                 "title", new ParamProperty("STRING", "Habit title.", null, null),
                                 "goalName", new ParamProperty("STRING", "Name of an existing goal this habit supports, if mentioned.", null, null),
                                 "frequency", new ParamProperty("STRING", "How often the habit repeats; defaults to DAILY if omitted.", List.of("DAILY", "WEEKLY"), null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "update_habit",
+                        "Update an existing habit, identified by its current title. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the habit to update, exactly as it appears.", null, null),
+                                "newTitle", new ParamProperty("STRING", "New title, only if renaming.", null, null),
+                                "goalName", new ParamProperty("STRING", "New goal to link, only if changing.", null, null),
+                                "frequency", new ParamProperty("STRING", "New frequency, only if changing.", List.of("DAILY", "WEEKLY"), null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "delete_habit",
+                        "Delete an existing habit, identified by its current title. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the habit to delete, exactly as it appears.", null, null)),
                                 List.of("title"))),
                 new FunctionDeclaration(
                         "create_note",
@@ -286,6 +329,22 @@ public class GeminiChatClient {
                                 "content", new ParamProperty("STRING", "Note body text.", null, null),
                                 "tags", new ParamProperty("ARRAY", "Freeform tags for the note.", null, new ParamProperty("STRING", null, null, null)),
                                 "folderName", new ParamProperty("STRING", "Name of an existing folder, if mentioned.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "update_note",
+                        "Update an existing note, identified by its current title. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the note to update, exactly as it appears.", null, null),
+                                "newTitle", new ParamProperty("STRING", "New title, only if renaming.", null, null),
+                                "content", new ParamProperty("STRING", "New body text, only if changing.", null, null),
+                                "tags", new ParamProperty("ARRAY", "New full set of tags, only if changing.", null, new ParamProperty("STRING", null, null, null)),
+                                "folderName", new ParamProperty("STRING", "New folder to move it to, only if changing.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "delete_note",
+                        "Delete an existing note, identified by its current title. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the note to delete, exactly as it appears.", null, null)),
                                 List.of("title"))),
                 new FunctionDeclaration(
                         "create_calendar_event",
@@ -300,6 +359,25 @@ public class GeminiChatClient {
                                 "location", new ParamProperty("STRING", "Optional location.", null, null)),
                                 List.of("title", "startTime"))),
                 new FunctionDeclaration(
+                        "update_calendar_event",
+                        "Update an existing calendar event, identified by its current title. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the event to update, exactly as it appears.", null, null),
+                                "newTitle", new ParamProperty("STRING", "New title, only if renaming.", null, null),
+                                "description", new ParamProperty("STRING", "New details, only if changing.", null, null),
+                                "category", new ParamProperty("STRING", "New category, only if changing.", List.of("INTERVIEW", "TASK", "STUDY_BLOCK", "DEADLINE", "MEETING", "OTHER"), null),
+                                "startTime", new ParamProperty("STRING", "New start date-time (ISO-8601 instant), only if changing.", null, null),
+                                "endTime", new ParamProperty("STRING", "New end date-time (ISO-8601 instant), only if changing.", null, null),
+                                "allDay", new ParamProperty("BOOLEAN", "New all-day flag, only if changing.", null, null),
+                                "location", new ParamProperty("STRING", "New location, only if changing.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "delete_calendar_event",
+                        "Delete an existing calendar event, identified by its current title. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the event to delete, exactly as it appears.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
                         "create_goal",
                         "Create a new goal for the user, optionally linked to an existing project.",
                         new ParamSchema("OBJECT", Map.of(
@@ -309,6 +387,25 @@ public class GeminiChatClient {
                                 "targetDate", new ParamProperty("STRING", "Target date in ISO-8601 format YYYY-MM-DD, if mentioned.", null, null),
                                 "progressPercent", new ParamProperty("INTEGER", "Progress from 0 to 100, if mentioned.", null, null),
                                 "projectName", new ParamProperty("STRING", "Name of an existing project this goal supports, if mentioned.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "update_goal",
+                        "Update an existing goal, identified by its current title. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the goal to update, exactly as it appears.", null, null),
+                                "newTitle", new ParamProperty("STRING", "New title, only if renaming.", null, null),
+                                "description", new ParamProperty("STRING", "New details, only if changing.", null, null),
+                                "type", new ParamProperty("STRING", "New timeframe, only if changing.", List.of("DAILY", "WEEKLY", "MONTHLY", "CAREER"), null),
+                                "status", new ParamProperty("STRING", "New status, only if changing -- use this to mark a goal complete or abandoned.", List.of("ACTIVE", "COMPLETED", "ABANDONED"), null),
+                                "targetDate", new ParamProperty("STRING", "New target date YYYY-MM-DD, only if changing.", null, null),
+                                "progressPercent", new ParamProperty("INTEGER", "New progress from 0 to 100, only if changing.", null, null),
+                                "projectName", new ParamProperty("STRING", "New project to link, only if changing.", null, null)),
+                                List.of("title"))),
+                new FunctionDeclaration(
+                        "delete_goal",
+                        "Delete an existing goal, identified by its current title. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "title", new ParamProperty("STRING", "Current title of the goal to delete, exactly as it appears.", null, null)),
                                 List.of("title"))),
                 new FunctionDeclaration(
                         "create_project",
@@ -321,6 +418,25 @@ public class GeminiChatClient {
                                 "roadmap", new ParamProperty("STRING", "Optional roadmap or plan text.", null, null),
                                 "stackTags", new ParamProperty("ARRAY", "Technologies used.", null, new ParamProperty("STRING", null, null, null)),
                                 "status", new ParamProperty("STRING", "Project status; defaults to PLANNING if omitted.", List.of("PLANNING", "IN_PROGRESS", "ON_HOLD", "COMPLETED"), null)),
+                                List.of("name"))),
+                new FunctionDeclaration(
+                        "update_project",
+                        "Update an existing project, identified by its current name. Only include fields that should change.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "name", new ParamProperty("STRING", "Current name of the project to update, exactly as it appears.", null, null),
+                                "newName", new ParamProperty("STRING", "New name, only if renaming.", null, null),
+                                "description", new ParamProperty("STRING", "New description, only if changing.", null, null),
+                                "repoUrl", new ParamProperty("STRING", "New repository URL, only if changing.", null, null),
+                                "liveUrl", new ParamProperty("STRING", "New live/deployed URL, only if changing.", null, null),
+                                "roadmap", new ParamProperty("STRING", "New roadmap or plan text, only if changing.", null, null),
+                                "stackTags", new ParamProperty("ARRAY", "New full set of technologies used, only if changing.", null, new ParamProperty("STRING", null, null, null)),
+                                "status", new ParamProperty("STRING", "New status, only if changing.", List.of("PLANNING", "IN_PROGRESS", "ON_HOLD", "COMPLETED"), null)),
+                                List.of("name"))),
+                new FunctionDeclaration(
+                        "delete_project",
+                        "Delete an existing project, identified by its current name. This also deletes its tasks and milestones. This cannot be undone.",
+                        new ParamSchema("OBJECT", Map.of(
+                                "name", new ParamProperty("STRING", "Current name of the project to delete, exactly as it appears.", null, null)),
                                 List.of("name")))
         )));
     }

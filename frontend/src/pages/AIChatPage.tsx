@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import ConversationList from '@/components/ai/ConversationList'
 import ChatMessageBubble from '@/components/ai/ChatMessageBubble'
+import ProposalCard from '@/components/ai/ProposalCard'
 import {
   useAIConversations,
   useAIConversation,
@@ -93,6 +94,9 @@ export default function AIChatPage() {
                 )}
                 {conversation?.messages.map(message => (
                   <ChatMessageBubble key={message.id} message={message} />
+                ))}
+                {conversation?.pendingProposals.map(proposal => (
+                  <ProposalCard key={proposal.id} proposal={proposal} conversationId={selectedId!} />
                 ))}
                 {sendMessage.isPending && (
                   <div className="flex gap-3">

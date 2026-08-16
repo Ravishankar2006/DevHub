@@ -368,8 +368,21 @@ export interface AIConversationSummary {
   updatedAt: string
 }
 
+export type AIActionStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED'
+
+export interface AIProposedAction {
+  id: string
+  actionType: string
+  summary: string
+  destructive: boolean
+  status: AIActionStatus
+  createdAt: string
+  resolvedAt: string | null
+}
+
 export interface AIConversationDetail extends AIConversationSummary {
   messages: AIMessage[]
+  pendingProposals: AIProposedAction[]
 }
 
 export type AiJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
