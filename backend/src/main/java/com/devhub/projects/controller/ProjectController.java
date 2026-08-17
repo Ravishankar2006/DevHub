@@ -1,5 +1,7 @@
 package com.devhub.projects.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.projects.ProjectService;
 import com.devhub.projects.dto.ProjectDto;
 import com.devhub.projects.dto.ProjectRequest;
@@ -20,12 +22,16 @@ import java.util.UUID;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<ProjectDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody ProjectRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(currentUser, request));
+        ProjectDto created = projectService.createProject(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_PROJECT",
+                created.getId().toString(), "Created project \"" + created.getName() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -47,14 +53,20 @@ public class ProjectController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody ProjectRequest request) {
-        return ResponseEntity.ok(projectService.updateProject(currentUser, id, request));
+        ProjectDto updated = projectService.updateProject(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_PROJECT",
+                updated.getId().toString(), "Updated project \"" + updated.getName() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        ProjectDto existing = projectService.getProject(currentUser, id);
         projectService.deleteProject(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_PROJECT",
+                existing.getId().toString(), "Deleted project \"" + existing.getName() + "\"");
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,7 @@
 package com.devhub.goals.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.goals.GoalService;
 import com.devhub.goals.GoalStatus;
 import com.devhub.goals.dto.GoalDto;
@@ -21,12 +23,16 @@ import java.util.UUID;
 public class GoalController {
 
     private final GoalService goalService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<GoalDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody GoalRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(goalService.createGoal(currentUser, request));
+        GoalDto created = goalService.createGoal(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_GOAL",
+                created.getId().toString(), "Created goal \"" + created.getTitle() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -48,14 +54,20 @@ public class GoalController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody GoalRequest request) {
-        return ResponseEntity.ok(goalService.updateGoal(currentUser, id, request));
+        GoalDto updated = goalService.updateGoal(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_GOAL",
+                updated.getId().toString(), "Updated goal \"" + updated.getTitle() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        GoalDto existing = goalService.getGoal(currentUser, id);
         goalService.deleteGoal(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_GOAL",
+                existing.getId().toString(), "Deleted goal \"" + existing.getTitle() + "\"");
         return ResponseEntity.noContent().build();
     }
 }

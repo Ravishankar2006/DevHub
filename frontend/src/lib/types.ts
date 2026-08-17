@@ -385,6 +385,17 @@ export interface AIConversationDetail extends AIConversationSummary {
   pendingProposals: AIProposedAction[]
 }
 
+export type ActivityLogSource = 'USER' | 'AI_AGENT'
+
+export interface ActivityLogEntry {
+  id: string
+  source: ActivityLogSource
+  actionType: string
+  targetEntityRef: string | null
+  summary: string
+  createdAt: string
+}
+
 export type AiJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
 
 export interface AiJob {

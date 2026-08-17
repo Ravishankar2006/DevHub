@@ -1,5 +1,7 @@
 package com.devhub.calendar.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.calendar.CalendarEventService;
 import com.devhub.calendar.dto.CalendarEventDto;
 import com.devhub.calendar.dto.CalendarEventRequest;
@@ -21,12 +23,16 @@ import java.util.UUID;
 public class CalendarEventController {
 
     private final CalendarEventService calendarEventService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<CalendarEventDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody CalendarEventRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(calendarEventService.createEvent(currentUser, request));
+        CalendarEventDto created = calendarEventService.createEvent(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_CALENDAR_EVENT",
+                created.getId().toString(), "Created calendar event \"" + created.getTitle() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -49,14 +55,20 @@ public class CalendarEventController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody CalendarEventRequest request) {
-        return ResponseEntity.ok(calendarEventService.updateEvent(currentUser, id, request));
+        CalendarEventDto updated = calendarEventService.updateEvent(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_CALENDAR_EVENT",
+                updated.getId().toString(), "Updated calendar event \"" + updated.getTitle() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        CalendarEventDto existing = calendarEventService.getEvent(currentUser, id);
         calendarEventService.deleteEvent(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_CALENDAR_EVENT",
+                existing.getId().toString(), "Deleted calendar event \"" + existing.getTitle() + "\"");
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,7 @@
 package com.devhub.ai;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.ai.dto.AIMapper;
 import com.devhub.ai.dto.AIProposedActionDto;
 import com.devhub.common.ApiException;
@@ -26,6 +28,7 @@ public class AIProposedActionService {
     private final AIProposedActionRepository aiProposedActionRepository;
     private final AIMessageRepository aiMessageRepository;
     private final AgentToolExecutor agentToolExecutor;
+    private final ActivityLogService activityLogService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -65,6 +68,10 @@ public class AIProposedActionService {
         proposal.setStatus(ProposalStatus.CONFIRMED);
         proposal.setResolvedAt(Instant.now());
         proposal = aiProposedActionRepository.save(proposal);
+
+        Object id = result.payload().get("id");
+        activityLogService.log(currentUser, ActivityLogSource.AI_AGENT, proposal.getActionType().name(),
+                id != null ? String.valueOf(id) : null, proposal.getSummary());
 
         appendMessage(proposal.getConversation(), "Confirmed: " + proposal.getSummary());
         return AIMapper.toProposalDto(proposal);

@@ -1,5 +1,7 @@
 package com.devhub.notes.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.notes.NoteService;
 import com.devhub.notes.dto.NoteDto;
 import com.devhub.notes.dto.NoteRequest;
@@ -20,12 +22,16 @@ import java.util.UUID;
 public class NoteController {
 
     private final NoteService noteService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<NoteDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody NoteRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(noteService.createNote(currentUser, request));
+        NoteDto created = noteService.createNote(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_NOTE",
+                created.getId().toString(), "Created note \"" + created.getTitle() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -48,14 +54,20 @@ public class NoteController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody NoteRequest request) {
-        return ResponseEntity.ok(noteService.updateNote(currentUser, id, request));
+        NoteDto updated = noteService.updateNote(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_NOTE",
+                updated.getId().toString(), "Updated note \"" + updated.getTitle() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        NoteDto existing = noteService.getNote(currentUser, id);
         noteService.deleteNote(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_NOTE",
+                existing.getId().toString(), "Deleted note \"" + existing.getTitle() + "\"");
         return ResponseEntity.noContent().build();
     }
 }

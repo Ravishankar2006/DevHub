@@ -14,6 +14,7 @@ import ContinueLearningWidget from '@/components/dashboard/ContinueLearningWidge
 import UpcomingCalendarEventsWidget from '@/components/dashboard/UpcomingCalendarEventsWidget'
 import GitHubActivityWidget from '@/components/dashboard/GitHubActivityWidget'
 import LeetCodeActivityWidget from '@/components/dashboard/LeetCodeActivityWidget'
+import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -72,6 +73,7 @@ export default function DashboardPage() {
         <UpcomingCalendarEventsWidget />
         <GitHubActivityWidget />
         <LeetCodeActivityWidget />
+        <RecentActivityWidget />
       </div>
     </div>
   )

@@ -1,5 +1,7 @@
 package com.devhub.tasks.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.tasks.TaskService;
 import com.devhub.tasks.TaskStatus;
 import com.devhub.tasks.dto.TaskDto;
@@ -21,12 +23,16 @@ import java.util.UUID;
 public class TaskController {
 
     private final TaskService taskService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<TaskDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody TaskRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(currentUser, request));
+        TaskDto created = taskService.createTask(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_TASK",
+                created.getId().toString(), "Created task \"" + created.getTitle() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -49,14 +55,20 @@ public class TaskController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody TaskRequest request) {
-        return ResponseEntity.ok(taskService.updateTask(currentUser, id, request));
+        TaskDto updated = taskService.updateTask(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_TASK",
+                updated.getId().toString(), "Updated task \"" + updated.getTitle() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        TaskDto existing = taskService.getTask(currentUser, id);
         taskService.deleteTask(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_TASK",
+                existing.getId().toString(), "Deleted task \"" + existing.getTitle() + "\"");
         return ResponseEntity.noContent().build();
     }
 }

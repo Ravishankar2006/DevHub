@@ -1,5 +1,7 @@
 package com.devhub.goals.controller;
 
+import com.devhub.activity.ActivityLogService;
+import com.devhub.activity.ActivityLogSource;
 import com.devhub.goals.HabitService;
 import com.devhub.goals.dto.HabitDto;
 import com.devhub.goals.dto.HabitRequest;
@@ -20,12 +22,16 @@ import java.util.UUID;
 public class HabitController {
 
     private final HabitService habitService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<HabitDto> create(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody HabitRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(habitService.createHabit(currentUser, request));
+        HabitDto created = habitService.createHabit(currentUser, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "CREATE_HABIT",
+                created.getId().toString(), "Created habit \"" + created.getTitle() + "\"");
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping
@@ -47,14 +53,20 @@ public class HabitController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id,
             @Valid @RequestBody HabitRequest request) {
-        return ResponseEntity.ok(habitService.updateHabit(currentUser, id, request));
+        HabitDto updated = habitService.updateHabit(currentUser, id, request);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "UPDATE_HABIT",
+                updated.getId().toString(), "Updated habit \"" + updated.getTitle() + "\"");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
+        HabitDto existing = habitService.getHabit(currentUser, id);
         habitService.deleteHabit(currentUser, id);
+        activityLogService.log(currentUser, ActivityLogSource.USER, "DELETE_HABIT",
+                existing.getId().toString(), "Deleted habit \"" + existing.getTitle() + "\"");
         return ResponseEntity.noContent().build();
     }
 
