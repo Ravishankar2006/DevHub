@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,21 +25,25 @@ public class ResumeService {
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
 
     private final ResumeRepository resumeRepository;
-    private final ResumeFileStorageService storageService;
     private final JobApplicationRepository jobApplicationRepository;
 
     @Transactional
     public ResumeDto createResume(User currentUser, MultipartFile file, String name, String label, String notes) {
         validateFile(file);
 
-        String storagePath = storageService.store(currentUser.getId(), file);
+        byte[] fileData;
+        try {
+            fileData = file.getBytes();
+        } catch (IOException e) {
+            throw new ApiException("Failed to read uploaded file", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
         Resume resume = Resume.builder()
                 .user(currentUser)
                 .name(name)
                 .label(label)
                 .fileName(file.getOriginalFilename())
-                .storagePath(storagePath)
+                .fileData(fileData)
                 .fileSizeBytes(file.getSize())
                 .notes(notes)
                 .build();
@@ -83,7 +88,6 @@ public class ResumeService {
         linkedApplications.forEach(application -> application.setResume(null));
         jobApplicationRepository.saveAll(linkedApplications);
 
-        storageService.delete(resume.getStoragePath());
         resumeRepository.delete(resume);
     }
 

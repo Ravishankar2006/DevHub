@@ -9,7 +9,6 @@ import com.devhub.notes.NoteRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +32,6 @@ public class DocumentIndexService {
 
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
-    private final DocumentFileStorageService storageService;
     private final NoteRepository noteRepository;
     private final GeminiChatClient geminiChatClient;
     private final GeminiEmbeddingClient geminiEmbeddingClient;
@@ -104,14 +101,7 @@ public class DocumentIndexService {
         }
 
         if (document.getFileName() != null && document.getFileName().toLowerCase().endsWith(".pdf")) {
-            Resource resource = storageService.loadAsResource(document.getStoragePath());
-            byte[] bytes;
-            try {
-                bytes = resource.getInputStream().readAllBytes();
-            } catch (IOException e) {
-                throw new ApiException("Could not read uploaded file", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            String extracted = geminiChatClient.extractPdfText(bytes);
+            String extracted = geminiChatClient.extractPdfText(document.getFileData());
             document.setExtractedText(extracted);
             return extracted;
         }

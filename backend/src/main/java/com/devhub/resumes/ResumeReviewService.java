@@ -11,12 +11,10 @@ import com.devhub.users.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,7 +25,6 @@ public class ResumeReviewService {
 
     private final ResumeService resumeService;
     private final ResumeRepository resumeRepository;
-    private final ResumeFileStorageService storageService;
     private final AiJobService aiJobService;
     private final GeminiChatClient geminiChatClient;
     private final ObjectMapper objectMapper;
@@ -44,16 +41,7 @@ public class ResumeReviewService {
         Resume resume = resumeRepository.findById(job.getTargetId())
                 .orElseThrow(() -> new ApiException("Resume no longer exists", HttpStatus.NOT_FOUND));
 
-        Resource fileResource = storageService.loadAsResource(resume.getStoragePath());
-
-        byte[] pdfBytes;
-        try {
-            pdfBytes = fileResource.getInputStream().readAllBytes();
-        } catch (IOException e) {
-            throw new ApiException("Could not read resume file", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        GeminiChatClient.ResumeAnalysis analysis = geminiChatClient.analyzeResume(pdfBytes);
+        GeminiChatClient.ResumeAnalysis analysis = geminiChatClient.analyzeResume(resume.getFileData());
 
         try {
             resume.setReviewScore(analysis.score());

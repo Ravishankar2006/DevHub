@@ -52,9 +52,6 @@ devhub:
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRY_MS:604800000}
   security:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
-  storage:
-    resumes-dir: ${RESUME_STORAGE_DIR:./uploads/resumes}
-    documents-dir: ${DOCUMENT_STORAGE_DIR:./uploads/documents}
   ai:
     gemini-api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-flash-latest}

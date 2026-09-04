@@ -31,9 +31,6 @@ devhub:
     refresh-expiration-ms: 604800000
   security:
     allowed-origins: http://localhost:5173
-  storage:
-    resumes-dir: ./target/test-uploads/resumes
-    documents-dir: ./target/test-uploads/documents
   ai:
     gemini-api-key: test-key
     model: gemini-flash-latest

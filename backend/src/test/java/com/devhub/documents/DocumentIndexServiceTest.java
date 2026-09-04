@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DocumentIndexServiceTest {
 
     private final DocumentIndexService documentIndexService =
-            new DocumentIndexService(null, null, null, null, null, null, null, null);
+            new DocumentIndexService(null, null, null, null, null, null, null);
 
     @Test
     void emptyTextProducesNoChunks() {

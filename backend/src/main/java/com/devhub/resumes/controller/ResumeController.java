@@ -2,7 +2,6 @@ package com.devhub.resumes.controller;
 
 import com.devhub.jobs.dto.AiJobDto;
 import com.devhub.resumes.Resume;
-import com.devhub.resumes.ResumeFileStorageService;
 import com.devhub.resumes.ResumeReviewService;
 import com.devhub.resumes.ResumeService;
 import com.devhub.resumes.dto.ResumeDto;
@@ -10,6 +9,7 @@ import com.devhub.resumes.dto.ResumeMetadataRequest;
 import com.devhub.users.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -29,7 +29,6 @@ import java.util.UUID;
 public class ResumeController {
 
     private final ResumeService resumeService;
-    private final ResumeFileStorageService storageService;
     private final ResumeReviewService resumeReviewService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -86,7 +85,7 @@ public class ResumeController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
         Resume resume = resumeService.downloadResume(currentUser, id);
-        Resource fileResource = storageService.loadAsResource(resume.getStoragePath());
+        Resource fileResource = new ByteArrayResource(resume.getFileData());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)

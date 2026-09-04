@@ -27,7 +27,6 @@ public class DocumentUploadService {
 
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
-    private final DocumentFileStorageService storageService;
     private final AiJobService aiJobService;
 
     @Transactional
@@ -35,14 +34,19 @@ public class DocumentUploadService {
         validateFile(file);
 
         String fileName = file.getOriginalFilename();
-        String storagePath = storageService.store(currentUser.getId(), file);
+        byte[] fileData;
+        try {
+            fileData = file.getBytes();
+        } catch (IOException e) {
+            throw new ApiException("Failed to read uploaded file", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         String extractedText = isTextFile(fileName) ? readAsText(file) : null;
 
         Document document = Document.builder()
                 .user(currentUser)
                 .sourceType(DocumentSourceType.UPLOAD)
                 .title(StringUtils.hasText(title) ? title : fileName)
-                .storagePath(storagePath)
+                .fileData(fileData)
                 .fileName(fileName)
                 .extractedText(extractedText)
                 .build();
@@ -64,9 +68,6 @@ public class DocumentUploadService {
         Document document = getOwnedDocument(currentUser, documentId);
 
         documentChunkRepository.deleteByDocumentId(document.getId());
-        if (document.getStoragePath() != null) {
-            storageService.delete(document.getStoragePath());
-        }
         documentRepository.delete(document);
     }
 

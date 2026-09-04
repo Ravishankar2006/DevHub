@@ -37,8 +37,8 @@ public class Document {
     @Column(nullable = false)
     private String title;
 
-    @Column(name = "storage_path")
-    private String storagePath;
+    @Column(name = "file_data", columnDefinition = "bytea")
+    private byte[] fileData;
 
     @Column(name = "file_name")
     private String fileName;

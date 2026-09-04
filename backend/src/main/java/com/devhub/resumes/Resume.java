@@ -35,8 +35,8 @@ public class Resume {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(name = "storage_path", nullable = false)
-    private String storagePath;
+    @Column(name = "file_data", nullable = false, columnDefinition = "bytea")
+    private byte[] fileData;
 
     @Column(name = "file_size_bytes", nullable = false)
     private long fileSizeBytes;
