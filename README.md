@@ -1,69 +1,238 @@
 # DevHub
 
-> **AI Developer Operating System** — One connected workspace for developers to manage projects, tasks, notes, learning, resumes, and job applications — with AI-powered guidance built on top of their own data.
+> **AI Developer Operating System** — one connected workspace for projects, tasks, goals, notes,
+> learning, resumes, and job applications, with an AI agent that can act on your own data.
+
+React 19 SPA → stateless Spring Boot 3 REST API → one PostgreSQL database.
+15 feature modules · 18 Flyway migrations · 147 backend tests.
 
 ---
 
-## Project Structure
+## Architecture
+
+```
+┌─────────────────┐      JWT / JSON      ┌──────────────────────┐
+│  React 19 SPA   │ ───────────────────► │  Spring Boot 3 API   │
+│  Vite · TS      │ ◄─────────────────── │  stateless · /api    │
+│  Vercel (CDN)   │                      │  Render (Docker)     │
+└─────────────────┘                      └──────────┬───────────┘
+                                                    │ JPA · Flyway
+                                    ┌───────────────┴───────────────┐
+                                    │   PostgreSQL (Neon)           │
+                                    │   domain · embeddings · files │
+                                    └───────────────────────────────┘
+                                                    │
+                                    external: Gemini · GitHub · LeetCode
+```
+
+One database, one deployable, no message broker and no cache tier. The complexity budget is
+spent on the AI agent layer, not on infrastructure — see [Design decisions](#design-decisions).
+
+---
+
+## Tech stack
+
+| Layer | What's actually used |
+|---|---|
+| **Frontend** | React 19, TypeScript, Vite 8, TanStack Query v5, React Router 7, Tailwind CSS 3, react-hook-form + Zod, axios |
+| **Backend** | Java 21, Spring Boot 3.5, Spring Security (JWT via jjwt), Spring Data JPA, Spring Retry, Bean Validation, Actuator + Micrometer/Prometheus |
+| **Database** | PostgreSQL (Neon) · Flyway migrations · `ddl-auto: validate` · H2 in-memory for tests and local dev |
+| **AI** | Google Gemini REST API, called directly via Spring `RestClient` (chat, function calling, PDF input, embeddings) |
+| **File storage** | Postgres `BYTEA` columns (10 MB upload cap) |
+| **Search** | Embeddings stored as JSON `TEXT`, cosine similarity computed in-process |
+| **Background work** | `@Scheduled` pollers over an `ai_jobs` table |
+| **Build / CI** | Maven, npm, GitHub Actions (backend + frontend jobs in parallel) |
+| **Deploy** | Backend → Render (multi-stage Docker, `render.yaml`) · Frontend → Vercel (`vercel.json`) |
+
+---
+
+## Repo structure
 
 ```
 DevHub/
-├── frontend/       # React + TypeScript + Vite (deploy → Vercel)
-├── backend/        # Spring Boot 3 (deploy → Railway)
-├── docs/           # PRD, schema, API contracts
-└── infra/          # Docker Compose (local dev), env templates
+├── frontend/       React + TypeScript + Vite       → Vercel
+│   └── src/
+│       ├── pages/        route-level screens (all lazy-loaded)
+│       ├── components/   grouped by feature, + ui/ primitives
+│       ├── hooks/        one TanStack Query hook file per backend module
+│       ├── contexts/     auth + theme (the only global client state)
+│       └── lib/          axios client, types, utils
+├── backend/        Spring Boot 3                    → Render
+│   └── src/main/java/com/devhub/
+│       ├── <feature>/            entity · repository · service · enums
+│       │   ├── controller/       HTTP layer only
+│       │   └── dto/              request/response + mappers
+│       └── common/               ApiException, error handler, DataSource, retry
+├── infra/          docker-compose for local Postgres, env template
+└── docs/prd/       product requirement documents
 ```
 
-## Tech Stack
+**Backend packages** (package-by-feature, layered inside each):
+`auth` · `users` · `projects` · `tasks` · `goals` · `notes` · `learning` · `resumes` ·
+`careers` · `calendar` · `documents` · `github` · `leetcode` · `ai` · `brief` · `jobs` · `activity`
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, TypeScript, Vite, TailwindCSS, shadcn/ui |
-| Backend | Spring Boot 3.x, Spring Security, Spring Data JPA, Flyway |
-| Database | PostgreSQL (Neon) + pgvector |
-| AI | OpenAI API via Spring AI |
-| Storage | Supabase Storage |
-| Cache | Redis (narrow, optional) |
+Frontend hook files mirror backend modules one-to-one, so the client's structure matches the API's.
 
-## Getting Started (Local Dev)
+---
+
+## Modules
+
+Auth · Dashboard · Projects & Milestones · Tasks · Goals & Habits · Notes & Folders ·
+Learning Tracker · Resume Manager (+ AI review) · Job & Company Tracker · Calendar ·
+AI Assistant (agentic) · AI Daily Brief · Semantic Search · GitHub Integration ·
+LeetCode Integration · Activity Log
+
+---
+
+## Getting started
 
 ### Prerequisites
-- Node.js 20+
-- Java 21+ JDK
+- Node.js 20+ (CI uses 22)
+- JDK 21
 - Maven 3.9+
+- Docker (only if you want Postgres locally instead of H2)
+
+### Backend — fastest path (H2, no database to set up)
+
+The `dev` profile runs against in-memory H2 with Flyway disabled and the schema generated by
+Hibernate. Nothing persists between restarts, which is what you want for a scratch run.
+
+```bash
+cd backend
+JWT_SECRET=$(openssl rand -hex 32) \
+  mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+API → `http://localhost:8080/api` · H2 console → `http://localhost:8080/api/h2-console`
+
+### Backend — against real Postgres (exercises Flyway)
+
+```bash
+docker compose -f infra/docker-compose.yml up -d postgres
+
+cd backend
+cp ../infra/.env.example .env     # then fill it in
+./run-backend.sh                  # loads .env, runs the default profile
+```
+
+For the local container, use:
+`NEON_DATABASE_URL=postgresql://devhub:devhub_local_secret@localhost:5432/devhub`
+
+Required: `NEON_DATABASE_URL`, `JWT_SECRET`.
+Optional (features degrade without them): `GEMINI_API_KEY`, `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
+All variables are documented in [`infra/.env.example`](infra/.env.example).
 
 ### Frontend
 
 ```bash
 cd frontend
-cp .env.example .env.local
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-### Backend
+`VITE_API_BASE_URL` is optional and defaults to `http://localhost:8080/api`.
+The backend's default CORS allowlist already includes `http://localhost:5173`.
+
+---
+
+## Tests
 
 ```bash
-cd backend
-cp .env.example .env
-# Fill in NEON_DATABASE_URL and JWT_SECRET
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+cd backend  && mvn test          # 147 tests, 27 classes, H2-backed
+cd frontend && npm run test:run  # Vitest + Testing Library + MSW
 ```
 
-## Build Phases
+Backend controller tests run through the real Spring Security filter chain via MockMvc rather
+than bypassing it. Frontend tests mock at the network layer with MSW, so components are exercised
+against realistic HTTP without stubbing the API client. CI runs both on every push and PR to `main`.
 
-| Phase | Description |
+---
+
+## Deployment
+
+| | Target | Config | Notes |
+|---|---|---|---|
+| Backend | Render | [`render.yaml`](render.yaml) | Multi-stage Docker (Temurin 21 JRE runtime), health check on `/api/actuator/health`, secrets declared with `sync: false` |
+| Frontend | Vercel | [`frontend/vercel.json`](frontend/vercel.json) | SPA rewrites to `index.html` |
+| Database | Neon | — | Migrations apply automatically at boot; `ddl-auto: validate` fails startup on schema drift |
+
+---
+
+## Design decisions
+
+**Modular monolith, not microservices.** There's no independent scaling axis and no team boundary
+to encode. Package-by-feature keeps the seams visible so extraction stays cheap if that changes.
+
+**Authorization lives in the service layer, not in route config.** Every service resolves entities
+through their owner (`getOwnedProject(user, id)`), so an unauthorized ID returns 404. This is what
+makes the AI agent safe — it calls the same services the controllers do and inherits every check.
+
+**The AI agent proposes; it never acts.** Tool calls run through `AgentToolExecutor.preview()`,
+which resolves and validates the target without mutating anything. Only a valid action becomes a
+row in `ai_proposed_actions` for the user to confirm. The guarantee is structural, not prompt-based.
+Every mutation is then recorded in `activity_log` tagged `USER` or `AI`.
+
+**Flyway owns the schema; Hibernate only validates it.** 18 forward-only migrations are the source
+of truth, and the app refuses to boot if entities have drifted from the real schema.
+
+**No Redux.** Almost all state here is server state, which TanStack Query already caches,
+deduplicates and invalidates. The genuinely global client state is auth and theme — two contexts.
+
+**Slow work goes in a database table, not a queue.** The `ai_jobs` table is the queue: durable
+across restarts, transactionally consistent with domain data, zero extra infrastructure.
+
+---
+
+## Decisions that changed
+
+Things that were planned one way and shipped another, and why:
+
+| Was | Is | Why it changed |
+|---|---|---|
+| Anthropic API | **Gemini** | Free tier covering chat *and* embeddings, with native PDF input for resume review (`4f222dc`) |
+| Spring AI abstraction | **Direct `RestClient`** | Needed exact control over function-calling payloads and multimodal requests; the library was pre-1.0 and moving. Cost of a provider swap turned out to be one class |
+| Read-only AI chat | **Agent with tools** | An assistant that could see your data but not touch it wasn't worth the round trip (`c316abf`) |
+| Agent executes directly | **Propose → confirm → execute** | A model that can call `deleteTask` can delete the wrong task from a hallucinated title match. Rebuilt around a proposal table, then added the audit trail that confirmation implies (`3911998`, `5321225`) |
+| Supabase Storage, then local disk | **Postgres `BYTEA`** | The host's filesystem is ephemeral, so uploads vanished on redeploy. Files are ≤10 MB and belong to exactly one user-scoped row, so the row is a reasonable home (`e362745`) |
+| pgvector | **JSON `TEXT` + in-process cosine** | Search is already scoped to one user's chunks; an ANN index saved microseconds and added a managed-Postgres extension dependency. Shipped naive behind a service boundary — see limits below |
+| Redis (rate limiting, cache) | **Dropped** | Single instance, so an in-memory fixed-window limiter on `/auth/*` was sufficient. Nothing ever connected to it, so it's out of local dev too |
+| Railway | **Render** | Deployed alongside the storage move (`e362745`) |
+| Java 25 target | **Java 21** | CI provisions Temurin 21, so the bump failed with `release version 25 not supported`. Reverted the version only and kept the Spring Boot 3.5.12 upgrade from the same commit (`973258d`) |
+
+---
+
+## Known limits
+
+Named deliberately, with the fix each one needs:
+
+- **Tokens live in `localStorage`** — XSS-readable. The better shape is an httpOnly refresh cookie
+  plus an in-memory access token; deferred because of cross-origin cookie handling between Vercel
+  and Render. Mitigated by a strict CORS allowlist and a 15-minute access token.
+- **Rate limiting is in-memory** — with N instances the effective limit becomes 5×N. Swapping the
+  `ConcurrentHashMap` in `RateLimitFilter` for a shared store is the fix.
+- **Search is O(n) per query** and deserializes every chunk into the heap. Fine at single-user
+  volume; the migration is a `vector(768)` column plus an IVFFlat index and one native query.
+- **The job poller has no multi-consumer safety** — needs `SELECT … FOR UPDATE SKIP LOCKED`
+  before a second instance exists.
+- **Refresh tokens aren't rotated or revocable** — a stolen one is valid for 7 days.
+- **Blobs in the database** grow backups and pull through the JVM heap. S3 with a key column is
+  the exit, and the schema shape before `V18` is exactly that.
+
+---
+
+## Build phases
+
+| Phase | Scope |
 |---|---|
-| **0** | Scaffold + Auth |
-| **1** | Core Workspace (Projects, Tasks, Goals, Notes) |
-| **2** | Growth Modules (Learning, Resumes, Jobs, Calendar) |
-| **3** | Intelligence Layer (AI Assistant, Daily Brief) |
-| **4** | Connected Context (GitHub, Embeddings, Semantic Search) |
-| **5** | Hardening + Production Deployment |
+| **0** | Scaffold + JWT auth |
+| **1** | Core workspace — projects, tasks, milestones, goals, habits, notes |
+| **2** | Growth modules — learning, resumes, jobs, calendar |
+| **3** | Intelligence — AI assistant, resume review, daily brief |
+| **4** | Connected context — GitHub, LeetCode, document embeddings, semantic search |
+| **5** | Hardening — indexes, retries, rate limiting, observability, tests, deployment |
 
-## MVP Modules
-
-Auth · Dashboard · Projects · Tasks & Milestones · Goals & Habits · Notes & Docs · Learning Tracker · Resume Manager · Job Tracker · Calendar · AI Assistant · AI Daily Brief · AI Resume Review · GitHub Integration · Semantic Search
+Each phase shipped vertically complete slices (migration → entity → service → controller → hook → page)
+rather than building all entities, then all controllers.
 
 ---
 
